@@ -1,4 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
+import MealTray from './MealTray'
+import { formatToday } from '../utils/formatToday'
 import styles from './LandingPage.module.css'
 
 const REGIONS = ['서울', '경기', '부산', '대구', '광주']
@@ -15,13 +18,123 @@ const SCHOOLS = [
   { name: '광산고등학교', region: '광주' },
 ]
 
-function formatToday() {
-  return new Intl.DateTimeFormat('ko-KR', {
-    month: 'long',
-    day: 'numeric',
-    weekday: 'short',
-  }).format(new Date())
-}
+const QUICK_ACTIONS = [
+  {
+    key: 'calendar',
+    to: '/calendar',
+    label: '급식 달력표',
+    desc: '날짜별 식단 한눈에',
+    icon: (
+      <>
+        <rect x="3" y="4" width="18" height="17" rx="2" />
+        <path d="M3 9h18M8 4v0M16 4v0M8 13h3M8 17h3M14 13h3M14 17h3" />
+      </>
+    ),
+    artFrom: '#f3bc63',
+    artTo: '#cf8a26',
+    art: (
+      <>
+        <rect x="12" y="14" width="48" height="44" rx="8" fill="#fdf6e6" />
+        <rect x="12" y="14" width="48" height="14" rx="8" fill="#a8703f" />
+        <rect x="12" y="20" width="48" height="8" fill="#a8703f" />
+        <rect x="22" y="8" width="4" height="10" rx="2" fill="#a8703f" />
+        <rect x="46" y="8" width="4" height="10" rx="2" fill="#a8703f" />
+        <rect x="21" y="36" width="10" height="10" rx="3" fill="#f3d9ae" />
+        <rect x="35" y="36" width="10" height="10" rx="3" fill="#e8a33d" />
+        <rect x="21" y="50" width="10" height="8" rx="3" fill="#f3d9ae" />
+        <path d="M37 40.5l1.8 1.8L43 38" stroke="#7c4a20" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+      </>
+    ),
+  },
+  {
+    key: 'game',
+    to: '/game',
+    label: '급식 게임',
+    desc: ' 재미있는 미니게임',
+    icon: (
+      <>
+        <rect x="2" y="7.5" width="20" height="9" rx="4.5" />
+        <path d="M7 10v4M5 12h4" />
+        <circle cx="16" cy="11" r="1" />
+        <circle cx="18.2" cy="13.5" r="1" />
+      </>
+    ),
+    artFrom: '#ff9466',
+    artTo: '#a8321b',
+    art: (
+      <>
+        <rect x="30" y="12" width="30" height="30" rx="8" fill="#c1391f" transform="rotate(14 45 27)" />
+        <g transform="rotate(14 45 27)" fill="#fdf6e6">
+          <circle cx="38" cy="20" r="2" />
+          <circle cx="52" cy="20" r="2" />
+          <circle cx="45" cy="27" r="2" />
+          <circle cx="38" cy="34" r="2" />
+          <circle cx="52" cy="34" r="2" />
+        </g>
+        <rect x="12" y="30" width="30" height="30" rx="8" fill="#fdf6e6" transform="rotate(-10 27 45)" />
+        <g transform="rotate(-10 27 45)" fill="#a8321b">
+          <circle cx="21" cy="39" r="2.1" />
+          <circle cx="33" cy="51" r="2.1" />
+        </g>
+      </>
+    ),
+  },
+  {
+    key: 'school',
+    label: '학교 검색',
+    desc: '우리 학교 찾기',
+    icon: (
+      <>
+        <circle cx="10.5" cy="10.5" r="6.5" />
+        <path d="M20 20l-4.6-4.6" />
+      </>
+    ),
+    artFrom: '#c7cdd0',
+    artTo: '#565c5f',
+    art: (
+      <>
+        <path d="M36 14L60 24 36 34 12 24Z" fill="#fdf6e6" />
+        <path d="M22 27.5V38c0 3.6 6.3 6.5 14 6.5s14-2.9 14-6.5V27.5" fill="none" stroke="#fdf6e6" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M60 24v11" stroke="#fdf6e6" strokeWidth="3" strokeLinecap="round" />
+        <circle cx="60" cy="38" r="2.2" fill="#fdf6e6" />
+        <circle cx="30" cy="49" r="11" fill="none" stroke="#fdf6e6" strokeWidth="4" />
+        <path d="M38.5 57.5L46 65" stroke="#fdf6e6" strokeWidth="4.5" strokeLinecap="round" />
+      </>
+    ),
+  },
+  {
+    key: 'vote',
+    to: '/vote',
+    label: '메뉴 투표',
+    desc: '다음 급식 뽑기',
+    icon: (
+      <>
+        <path d="M12 3v11" />
+        <path d="M7.5 8.5L12 4l4.5 4.5" />
+        <rect x="3" y="14" width="18" height="7" rx="2" />
+      </>
+    ),
+    artFrom: '#a3c274',
+    artTo: '#4f6b2e',
+    art: (
+      <>
+        <path d="M16 34h40l-5 26a4 4 0 01-4 3.4H25a4 4 0 01-4-3.4z" fill="#3f571f" />
+        <path d="M14 30h44l-2.4 8H16.4z" fill="#fdf6e6" />
+        <rect x="27" y="10" width="18" height="24" rx="3" fill="#e8a33d" transform="rotate(-7 36 22)" />
+        <path d="M31.5 21.5l3 3 6-6.5" transform="rotate(-7 36 22)" stroke="#3f571f" strokeWidth="2.6" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+      </>
+    ),
+  },
+]
+
+const BEST_FOODS = [
+  { rank: 1, name: '돈까스', kcal: 450, votes: 482, from: '#f4cf94', to: '#874f22' },
+  { rank: 2, name: '떡볶이', kcal: 320, votes: 411, from: '#ff9466', to: '#b8371e' },
+  { rank: 3, name: '제육볶음', kcal: 480, votes: 366, from: '#e2673c', to: '#8a321b' },
+  { rank: 4, name: '잡채', kcal: 210, votes: 298, from: '#e0b47e', to: '#7c4a20' },
+  { rank: 5, name: '치킨너겟', kcal: 350, votes: 274, from: '#f2c98a', to: '#a8703f' },
+  { rank: 6, name: '미역국', kcal: 90, votes: 233, from: '#8a6234', to: '#3d2513' },
+]
 
 export default function LandingPage() {
   const heroRef = useRef(null)
@@ -32,6 +145,12 @@ export default function LandingPage() {
   const [region, setRegion] = useState(REGIONS[0])
   const [search, setSearch] = useState('')
   const [school, setSchool] = useState('')
+
+  const bestTrackRef = useRef(null)
+  const bestPausedRef = useRef(false)
+  const bestScrollTimeoutRef = useRef(null)
+  const bestSyncingRef = useRef(false)
+  const [bestIndex, setBestIndex] = useState(0)
 
   useEffect(() => {
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -78,6 +197,56 @@ export default function LandingPage() {
   const visibleSchools = SCHOOLS.filter(
     (s) => s.region === region && s.name.includes(search.trim())
   )
+
+  useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+
+    const id = setInterval(() => {
+      if (bestPausedRef.current) return
+      setBestIndex((i) => (i + 1) % BEST_FOODS.length)
+    }, 3800)
+
+    return () => clearInterval(id)
+  }, [])
+
+  // useEffect(() => {
+  //   const track = bestTrackRef.current
+  //   const child = track?.children[bestIndex]
+  //   if (!child) return
+  //   bestSyncingRef.current = true
+  //   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  //   child.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', inline: 'start', block: 'nearest' })
+  // }, [bestIndex])
+
+  function handleBestScroll() {
+    const track = bestTrackRef.current
+    if (!track) return
+    clearTimeout(bestScrollTimeoutRef.current)
+    bestScrollTimeoutRef.current = setTimeout(() => {
+      if (bestSyncingRef.current) {
+        bestSyncingRef.current = false
+        return
+      }
+      let closest = 0
+      let closestDist = Infinity
+      Array.from(track.children).forEach((child, i) => {
+        const dist = Math.abs(child.offsetLeft - track.scrollLeft)
+        if (dist < closestDist) {
+          closestDist = dist
+          closest = i
+        }
+      })
+      setBestIndex(closest)
+    }, 120)
+  }
+
+  function pauseBest() {
+    bestPausedRef.current = true
+  }
+
+  function resumeBest() {
+    bestPausedRef.current = false
+  }
 
   return (
     <div className={styles.page}>
@@ -174,9 +343,9 @@ export default function LandingPage() {
         <div className={styles.heroCopy}>
           <p className={styles.eyebrow}>오늘의 급식</p>
           <h1>
-            매점 갈 시간에,
+            매점 음식 보다
             <br />
-            오늘은 <em>급식</em>이 더 맛있어요
+             <em>급식</em>이 더 맛있어요
           </h1>
           <p className={styles.lede}>
             따끈한 밥 한 그릇에 국, 메인 반찬까지. 우리 학교 급식이 얼마나 알차게 차려지는지 지금 확인해보세요.
@@ -184,168 +353,11 @@ export default function LandingPage() {
         </div>
 
         <div className={styles.trayStage}>
-          <div className={styles.trayWrap}>
-            <div className={styles.tray}>
-              <div className={styles.trayGrid}>
-
-                <div className={`${styles.cell} ${styles.cellRice}`} tabIndex={0}>
-                  <svg className={styles.foodArt} viewBox="0 0 100 100">
-                    <defs>
-                      <radialGradient id="riceGrad" cx="35%" cy="28%" r="78%">
-                        <stop offset="0%" stopColor="#fdf6e6" />
-                        <stop offset="55%" stopColor="var(--rice-100)" />
-                        <stop offset="100%" stopColor="var(--rice-300)" />
-                      </radialGradient>
-                    </defs>
-                    <ellipse cx="50" cy="60" rx="37" ry="24" fill="var(--rice-500)" opacity="0.55" />
-                    <ellipse cx="50" cy="54" rx="36" ry="25" fill="url(#riceGrad)" />
-                    <ellipse cx="50" cy="42" rx="27" ry="18" fill="url(#riceGrad)" />
-                    <g fill="#dcc697" opacity="0.7">
-                      <ellipse cx="36" cy="40" rx="2.6" ry="1.3" transform="rotate(25 36 40)" />
-                      <ellipse cx="60" cy="36" rx="2.6" ry="1.3" transform="rotate(-15 60 36)" />
-                      <ellipse cx="48" cy="30" rx="2.4" ry="1.2" transform="rotate(10 48 30)" />
-                      <ellipse cx="66" cy="50" rx="2.4" ry="1.2" transform="rotate(40 66 50)" />
-                      <ellipse cx="30" cy="54" rx="2.4" ry="1.2" transform="rotate(-20 30 54)" />
-                    </g>
-                    <ellipse cx="40" cy="32" rx="15" ry="7" fill="#ffffff" opacity="0.55" />
-                  </svg>
-                  <span className={styles.foodTag}>쌀밥 · <b>320kcal</b></span>
-                </div>
-
-                <div className={`${styles.cell} ${styles.cellSoup}`} tabIndex={0}>
-                  <svg className={styles.foodArt} viewBox="0 0 160 100">
-                    <defs>
-                      <radialGradient id="soupGrad" cx="46%" cy="34%" r="75%">
-                        <stop offset="0%" stopColor="var(--broth-500)" />
-                        <stop offset="70%" stopColor="var(--broth-700)" />
-                        <stop offset="100%" stopColor="#2c1a0c" />
-                      </radialGradient>
-                    </defs>
-                    <ellipse cx="80" cy="58" rx="58" ry="30" fill="url(#soupGrad)" />
-                    <ellipse cx="80" cy="58" rx="58" ry="30" fill="none" stroke="var(--honey-300)" strokeWidth="2.5" opacity="0.45" />
-                    <g fill="#f5e9cf" opacity="0.92">
-                      <rect x="58" y="46" width="12" height="12" rx="2" transform="rotate(18 64 52)" />
-                      <rect x="88" y="52" width="11" height="11" rx="2" transform="rotate(-10 93 57)" />
-                    </g>
-                    <g fill="var(--spinach-400)" opacity="0.85">
-                      <ellipse cx="76" cy="66" rx="7" ry="2.6" transform="rotate(20 76 66)" />
-                      <ellipse cx="96" cy="62" rx="6" ry="2.2" transform="rotate(-25 96 62)" />
-                    </g>
-                    <ellipse cx="58" cy="42" rx="16" ry="6" fill="#ffffff" opacity="0.18" />
-                    <g className={styles.steam} stroke="#f3e3c8" strokeWidth="3" fill="none" strokeLinecap="round" opacity="0.6">
-                      <path d="M68 34 C64 26, 72 22, 68 14" />
-                      <path d="M80 36 C76 27, 85 23, 80 14" />
-                      <path d="M92 34 C88 26, 96 22, 92 14" />
-                    </g>
-                  </svg>
-                  <span className={styles.foodTag}>된장찌개 · <b>90kcal</b></span>
-                </div>
-
-                <div className={`${styles.cell} ${styles.cellMain}`} tabIndex={0}>
-                  <svg className={styles.foodArt} viewBox="0 0 100 100">
-                    <defs>
-                      <linearGradient id="cutletGrad" x1="15%" y1="0%" x2="85%" y2="100%">
-                        <stop offset="0%" stopColor="#f4cf94" />
-                        <stop offset="50%" stopColor="var(--cutlet-300)" />
-                        <stop offset="100%" stopColor="#874f22" />
-                      </linearGradient>
-                    </defs>
-                    <g stroke="#e4edd0" strokeWidth="3" fill="none" strokeLinecap="round" opacity="0.8">
-                      <path d="M20 78 C26 70 24 63 31 57" />
-                      <path d="M29 82 C35 73 30 65 39 59" />
-                      <path d="M72 80 C65 72 69 64 62 58" />
-                    </g>
-                    <rect x="15" y="33" width="48" height="31" rx="14" fill="url(#cutletGrad)" transform="rotate(-7 39 48)" />
-                    <rect x="37" y="45" width="50" height="32" rx="14" fill="url(#cutletGrad)" transform="rotate(5 62 61)" />
-                    <g fill="#6b3d18" opacity="0.32">
-                      <circle cx="30" cy="42" r="1.3" /><circle cx="40" cy="38" r="1.2" /><circle cx="50" cy="43" r="1.3" />
-                      <circle cx="48" cy="56" r="1.3" /><circle cx="60" cy="52" r="1.2" /><circle cx="68" cy="60" r="1.3" />
-                      <circle cx="35" cy="52" r="1.2" /><circle cx="57" cy="65" r="1.2" />
-                    </g>
-                    <g fill="#fef1d6" opacity="0.6">
-                      <circle cx="34" cy="46" r="1.1" /><circle cx="45" cy="40" r="1" /><circle cx="55" cy="50" r="1.1" />
-                      <circle cx="63" cy="57" r="1" /><circle cx="42" cy="58" r="1" />
-                    </g>
-                    <path d="M22 45 Q30 39 38 45 T54 43 T70 47" stroke="#5a2f10" strokeWidth="2.2" fill="none" opacity="0.5" strokeLinecap="round" />
-                    <ellipse cx="33" cy="40" rx="13" ry="6" fill="#ffffff" opacity="0.32" />
-                  </svg>
-                  <span className={styles.foodTag}>돈까스 · <b>450kcal</b></span>
-                </div>
-
-                <div className={`${styles.cell} ${styles.cellSide1}`} tabIndex={0}>
-                  <svg className={styles.foodArt} viewBox="0 0 100 100">
-                    <g fill="none" strokeLinecap="round">
-                      <path d="M28 70 C32 50, 40 46, 36 28" stroke="var(--spinach-600)" strokeWidth="6" opacity="0.85" />
-                      <path d="M42 74 C48 54, 44 44, 52 26" stroke="var(--spinach-400)" strokeWidth="6" opacity="0.9" />
-                      <path d="M58 72 C62 56, 56 46, 64 30" stroke="var(--spinach-600)" strokeWidth="6" opacity="0.85" />
-                      <path d="M70 68 C74 52, 68 44, 74 32" stroke="var(--spinach-400)" strokeWidth="5.5" opacity="0.8" />
-                    </g>
-                    <g fill="#fdf6e6" opacity="0.85">
-                      <circle cx="46" cy="52" r="1.6" />
-                      <circle cx="58" cy="46" r="1.4" />
-                      <circle cx="36" cy="60" r="1.4" />
-                    </g>
-                  </svg>
-                  <span className={styles.foodTag}>시금치나물 · <b>45kcal</b></span>
-                </div>
-
-                <div className={`${styles.cell} ${styles.cellSide2}`} tabIndex={0}>
-                  <svg className={styles.foodArt} viewBox="0 0 100 100">
-                    <defs>
-                      <linearGradient id="kimchiGrad" x1="10%" y1="0%" x2="90%" y2="100%">
-                        <stop offset="0%" stopColor="#e2673c" />
-                        <stop offset="55%" stopColor="var(--kimchi-400)" />
-                        <stop offset="100%" stopColor="var(--kimchi-600)" />
-                      </linearGradient>
-                    </defs>
-                    <rect x="16" y="38" width="42" height="26" rx="10" fill="url(#kimchiGrad)" transform="rotate(-11 37 51)" />
-                    <rect x="40" y="30" width="42" height="27" rx="10" fill="url(#kimchiGrad)" transform="rotate(9 61 43)" />
-                    <rect x="28" y="58" width="42" height="25" rx="10" fill="url(#kimchiGrad)" transform="rotate(-4 49 70)" />
-                    <g stroke="#f7e6cf" strokeWidth="1.6" fill="none" opacity="0.55" strokeLinecap="round">
-                      <path d="M25 48 C31 46 37 47 43 51" />
-                      <path d="M50 40 C56 38 62 39 68 43" />
-                      <path d="M36 66 C42 64 48 65 54 69" />
-                    </g>
-                    <g fill="#7c2412" opacity="0.4">
-                      <circle cx="30" cy="46" r="1.1" /><circle cx="46" cy="52" r="1" /><circle cx="55" cy="38" r="1.1" />
-                      <circle cx="68" cy="45" r="1" /><circle cx="40" cy="65" r="1.1" /><circle cx="58" cy="70" r="1" />
-                    </g>
-                    <g fill="#fdf6e6" opacity="0.85">
-                      <circle cx="36" cy="52" r="1.3" />
-                      <circle cx="60" cy="46" r="1.2" />
-                      <circle cx="48" cy="72" r="1.2" />
-                    </g>
-                    <ellipse cx="52" cy="35" rx="12" ry="5" fill="#ffffff" opacity="0.28" />
-                  </svg>
-                  <span className={styles.foodTag}>배추김치 · <b>15kcal</b></span>
-                </div>
-
-              </div>
-            </div>
-
-            <svg className={styles.utensils} viewBox="0 0 220 90">
-              <defs>
-                <linearGradient id="steelGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="var(--steel-200)" />
-                  <stop offset="45%" stopColor="var(--steel-400)" />
-                  <stop offset="100%" stopColor="var(--steel-800)" />
-                </linearGradient>
-              </defs>
-              <g>
-                <rect x="4" y="40" width="128" height="7" rx="3.5" fill="url(#steelGrad)" />
-                <ellipse cx="146" cy="43" rx="22" ry="15" fill="url(#steelGrad)" />
-                <ellipse cx="140" cy="38" rx="9" ry="5" fill="#ffffff" opacity="0.35" />
-              </g>
-              <g>
-                <rect x="0" y="6" width="210" height="4.6" rx="2.3" fill="url(#steelGrad)" transform="rotate(1.2 105 8)" />
-                <rect x="0" y="16" width="210" height="4.6" rx="2.3" fill="url(#steelGrad)" transform="rotate(1.2 105 18)" />
-              </g>
-            </svg>
-          </div>
+          <MealTray />
         </div>
 
         <div className={styles.heroActions}>
-          <button className={styles.cta} type="button">오늘 식단 확인하기</button>
+          <Link className={styles.cta} to="/menu">오늘 식단 확인하기</Link>
           <a className={styles.scrollCue} href="#more">
             더 알아보기
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -356,51 +368,115 @@ export default function LandingPage() {
       </div>
 
       <section className={styles.contentArea} id="more">
-        <div className={styles.contentHead}>
-          <p className={styles.eyebrow}>이번 주 급식</p>
-          <h2>매점 갈 시간에, 급식이 더 맛있어졌어요</h2>
-          <p>식단표부터 잔반 포인트, 친구들의 후기까지. 급식을 더 즐겁게 만드는 기능들을 준비했어요.</p>
-        </div>
-
-        <div className={styles.cardGrid}>
-          <div className={styles.card}>
-            <div className={styles.icon}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="4" width="18" height="17" rx="2" />
-                <path d="M3 9h18M8 4v0M8 13h3M8 17h3M14 13h3M14 17h3" />
-              </svg>
-            </div>
-            <h3>주간 식단표</h3>
-            <p>월요일부터 금요일까지, 이번 주 메뉴를 한눈에 확인하세요.</p>
-            <a href="#">식단표 보기 →</a>
-          </div>
-
-          <div className={styles.card}>
-            <div className={styles.icon}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="9" />
-                <path d="M12 7v5l3.2 2" />
-              </svg>
-            </div>
-            <h3>잔반 없는 날 포인트</h3>
-            <p>잔반을 남기지 않으면 포인트가 쌓여요. 매점 쿠폰으로도 교환할 수 있어요.</p>
-            <a href="#">포인트 확인 →</a>
-          </div>
-
-          <div className={styles.card}>
-            <div className={styles.icon}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-              </svg>
-            </div>
-            <h3>오늘 급식 후기</h3>
-            <p>친구들이 남긴 오늘 급식의 별점과 솔직한 후기를 확인해보세요.</p>
-            <a href="#">후기 보러가기 →</a>
+        <div className={styles.quickSection}>
+          <p className={styles.eyebrow}>바로가기</p>
+          <div className={styles.quickGrid}>
+            {QUICK_ACTIONS.map((action) => {
+              const Tag = action.to ? Link : 'button'
+              const tagProps = action.to ? { to: action.to } : { type: 'button' }
+              return (
+                <Tag key={action.key} className={styles.quickTile} {...tagProps}>
+                  <span className={styles.quickBody}>
+                    <span className={styles.quickIcon}>
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        {action.icon}
+                      </svg>
+                    </span>
+                    <span className={styles.quickLabel}>{action.label}</span>
+                    <span className={styles.quickDesc}>{action.desc}</span>
+                  </span>
+                  <svg className={styles.quickArt} viewBox="0 0 72 72" aria-hidden="true">
+                    <defs>
+                      <linearGradient id={`quickArtGrad-${action.key}`} x1="10%" y1="0%" x2="90%" y2="100%">
+                        <stop offset="0%" stopColor={action.artFrom} />
+                        <stop offset="100%" stopColor={action.artTo} />
+                      </linearGradient>
+                    </defs>
+                    <rect x="4" y="4" width="64" height="64" rx="20" fill={`url(#quickArtGrad-${action.key})`} />
+                    {action.art}
+                  </svg>
+                </Tag>
+              )
+            })}
           </div>
         </div>
 
-        <div className={styles.moreSpace}>
-          공지사항, 영양 정보, 알레르기 안내 등 추가 콘텐츠가 이 영역에 들어갑니다.
+        <div
+          className={styles.bestSection}
+          onMouseEnter={pauseBest}
+          onMouseLeave={resumeBest}
+          onFocus={pauseBest}
+          onBlur={resumeBest}
+          onTouchStart={pauseBest}
+        >
+          <div className={styles.bestHead}>
+            <div>
+              <p className={styles.eyebrow}>이번 달 BEST</p>
+              <h2>친구들이 선택한 BEST 급식</h2>
+            </div>
+            <div className={styles.bestNav}>
+              <button
+                type="button"
+                aria-label="이전 메뉴"
+                onClick={() => setBestIndex((i) => (i - 1 + BEST_FOODS.length) % BEST_FOODS.length)}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M15 6l-6 6 6 6" />
+                </svg>
+              </button>
+              <button
+                type="button"
+                aria-label="다음 메뉴"
+                onClick={() => setBestIndex((i) => (i + 1) % BEST_FOODS.length)}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 6l6 6-6 6" />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div className={styles.bestViewport} ref={bestTrackRef} onScroll={handleBestScroll}>
+            {BEST_FOODS.map((food) => (
+              <article key={food.rank} className={styles.bestCard}>
+                <span className={styles.bestRank}>{food.rank}위</span>
+                <svg className={styles.bestArt} viewBox="0 0 100 60">
+                  <defs>
+                    <linearGradient id={`bestGrad-${food.rank}`} x1="10%" y1="0%" x2="90%" y2="100%">
+                      <stop offset="0%" stopColor={food.from} />
+                      <stop offset="100%" stopColor={food.to} />
+                    </linearGradient>
+                  </defs>
+                  <rect x="5" y="8" width="90" height="44" rx="18" fill={`url(#bestGrad-${food.rank})`} />
+                  <ellipse cx="32" cy="20" rx="16" ry="7" fill="#ffffff" opacity="0.25" />
+                  <g fill="#ffffff" opacity="0.35">
+                    <circle cx="60" cy="30" r="1.6" />
+                    <circle cx="70" cy="24" r="1.4" />
+                    <circle cx="50" cy="38" r="1.4" />
+                  </g>
+                </svg>
+                <h3 className={styles.bestName}>{food.name}</h3>
+                <p className={styles.bestMeta}>
+                  <span>{food.kcal}kcal</span>
+                  <span aria-hidden="true">·</span>
+                  <span>찜 {food.votes.toLocaleString('ko-KR')}</span>
+                </p>
+              </article>
+            ))}
+          </div>
+
+          <div className={styles.bestDots}>
+            {BEST_FOODS.map((food, i) => (
+              <button
+                key={food.rank}
+                type="button"
+                className={styles.bestDot}
+                aria-label={`${food.name}로 이동`}
+                aria-current={i === bestIndex ? 'true' : 'false'}
+                onClick={() => setBestIndex(i)}
+              />
+            ))}
+          </div>
         </div>
       </section>
     </div>
