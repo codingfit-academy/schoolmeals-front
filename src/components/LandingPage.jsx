@@ -2,21 +2,11 @@ import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import MealTray from './MealTray'
 import { formatToday } from '../utils/formatToday'
+import { fetchSchools } from '../api/schoolmeals'
+import { useSchool } from '../context/SchoolContext'
 import styles from './LandingPage.module.css'
 
-const REGIONS = ['서울', '경기', '부산', '대구', '광주']
-
-const SCHOOLS = [
-  { name: '강남중학교', region: '서울' },
-  { name: '잠실고등학교', region: '서울' },
-  { name: '한강중학교', region: '서울' },
-  { name: '분당중학교', region: '경기' },
-  { name: '수원고등학교', region: '경기' },
-  { name: '해운대중학교', region: '부산' },
-  { name: '동래고등학교', region: '부산' },
-  { name: '수성중학교', region: '대구' },
-  { name: '광산고등학교', region: '광주' },
-]
+const REGIONS = ['서울', '경기']
 
 const QUICK_ACTIONS = [
   {
@@ -80,33 +70,11 @@ const QUICK_ACTIONS = [
     ),
   },
   {
-    key: 'school',
-    label: '학교 검색',
-    desc: '우리 학교 찾기',
-    icon: (
-      <>
-        <circle cx="10.5" cy="10.5" r="6.5" />
-        <path d="M20 20l-4.6-4.6" />
-      </>
-    ),
-    artFrom: '#c7cdd0',
-    artTo: '#565c5f',
-    art: (
-      <>
-        <path d="M36 14L60 24 36 34 12 24Z" fill="#fdf6e6" />
-        <path d="M22 27.5V38c0 3.6 6.3 6.5 14 6.5s14-2.9 14-6.5V27.5" fill="none" stroke="#fdf6e6" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-        <path d="M60 24v11" stroke="#fdf6e6" strokeWidth="3" strokeLinecap="round" />
-        <circle cx="60" cy="38" r="2.2" fill="#fdf6e6" />
-        <circle cx="30" cy="49" r="11" fill="none" stroke="#fdf6e6" strokeWidth="4" />
-        <path d="M38.5 57.5L46 65" stroke="#fdf6e6" strokeWidth="4.5" strokeLinecap="round" />
-      </>
-    ),
-  },
-  {
     key: 'vote',
     to: '/vote',
     label: '메뉴 투표',
     desc: '다음 급식 뽑기',
+    big: true,
     icon: (
       <>
         <path d="M12 3v11" />
@@ -141,10 +109,14 @@ export default function LandingPage() {
   const filterRef = useRef(null)
   const searchInputRef = useRef(null)
 
+  const { school, setSchool } = useSchool()
+
   const [filterOpen, setFilterOpen] = useState(false)
-  const [region, setRegion] = useState(REGIONS[0])
+  const [region, setRegion] = useState(school?.region || REGIONS[0])
   const [search, setSearch] = useState('')
-  const [school, setSchool] = useState('')
+  const [schools, setSchools] = useState([])
+  const [schoolsLoading, setSchoolsLoading] = useState(false)
+  const [schoolsError, setSchoolsError] = useState(null)
 
   const bestTrackRef = useRef(null)
   const bestPausedRef = useRef(false)
@@ -194,9 +166,26 @@ export default function LandingPage() {
     }
   }, [filterOpen])
 
-  const visibleSchools = SCHOOLS.filter(
-    (s) => s.region === region && s.name.includes(search.trim())
-  )
+  useEffect(() => {
+    let cancelled = false
+    setSchoolsLoading(true)
+    setSchoolsError(null)
+    fetchSchools(region)
+      .then((data) => {
+        if (!cancelled) setSchools(data)
+      })
+      .catch((err) => {
+        if (!cancelled) setSchoolsError(err.message)
+      })
+      .finally(() => {
+        if (!cancelled) setSchoolsLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [region])
+
+  const visibleSchools = schools.filter((s) => s.name?.includes(search.trim()))
 
   useEffect(() => {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
@@ -283,7 +272,7 @@ export default function LandingPage() {
                 <path d="M12 21s-7-6.1-7-11a7 7 0 0 1 14 0c0 4.9-7 11-7 11z" />
                 <circle cx="12" cy="10" r="2.4" />
               </svg>
-              <span>{school || '학교를 선택하세요'}</span>
+              <span>{school?.name || '학교를 선택하세요'}</span>
               <svg className={styles.chev} width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
                 <path d="M6 9l6 6 6-6" />
               </svg>
@@ -319,22 +308,28 @@ export default function LandingPage() {
               />
 
               <ul className={styles.schoolList}>
-                {visibleSchools.length === 0 && (
+                {schoolsLoading && <li className={styles.emptySchools}>학교 목록을 불러오는 중이에요...</li>}
+                {!schoolsLoading && schoolsError && (
+                  <li className={styles.emptySchools}>학교 목록을 불러오지 못했어요.</li>
+                )}
+                {!schoolsLoading && !schoolsError && visibleSchools.length === 0 && (
                   <li className={styles.emptySchools}>검색 결과가 없어요.</li>
                 )}
-                {visibleSchools.map((s) => (
-                  <li key={s.name}>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSchool(s.name)
-                        setFilterOpen(false)
-                      }}
-                    >
-                      {s.name}
-                    </button>
-                  </li>
-                ))}
+                {!schoolsLoading &&
+                  !schoolsError &&
+                  visibleSchools.map((s, i) => (
+                    <li key={`${s.schoolCode}-${i}`}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSchool(s)
+                          setFilterOpen(false)
+                        }}
+                      >
+                        {s.name}
+                      </button>
+                    </li>
+                  ))}
               </ul>
             </div>
           </div>
@@ -374,8 +369,11 @@ export default function LandingPage() {
             {QUICK_ACTIONS.map((action) => {
               const Tag = action.to ? Link : 'button'
               const tagProps = action.to ? { to: action.to } : { type: 'button' }
+              const tileClass = action.big
+                ? `${styles.quickTile} ${styles.quickTileBig}`
+                : styles.quickTile
               return (
-                <Tag key={action.key} className={styles.quickTile} {...tagProps}>
+                <Tag key={action.key} className={tileClass} {...tagProps}>
                   <span className={styles.quickBody}>
                     <span className={styles.quickIcon}>
                       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

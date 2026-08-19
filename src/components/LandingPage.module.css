@@ -54,7 +54,7 @@
 }
 
 .page {
-  font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont,
+  font-family: 'KMU Sungkok Serif', 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont,
     'Apple SD Gothic Neo', 'Malgun Gothic', 'Segoe UI', sans-serif;
   background: var(--cream-50);
   color: var(--text);
@@ -471,6 +471,37 @@
   box-shadow: 0 16px 32px rgba(42, 29, 20, 0.12);
 }
 
+.quickTileBig {
+  grid-column: 1 / -1;
+  padding: 26px 26px;
+  background: linear-gradient(135deg, var(--amber-100), var(--surface-2));
+  border-color: var(--amber-500);
+}
+
+.quickTileBig .quickIcon {
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+}
+
+.quickTileBig .quickIcon svg {
+  width: 28px;
+  height: 28px;
+}
+
+.quickTileBig .quickLabel {
+  font-size: 19px;
+}
+
+.quickTileBig .quickDesc {
+  font-size: 13.5px;
+}
+
+.quickTileBig .quickArt {
+  width: 84px;
+  height: 84px;
+}
+
 .quickBody {
   display: flex;
   flex-direction: column;
@@ -668,5 +699,18 @@
   }
   .quickDesc {
     font-size: 11.5px;
+  }
+  .quickTileBig {
+    padding: 18px;
+  }
+  .quickTileBig .quickArt {
+    width: 58px;
+    height: 58px;
+  }
+  .quickTileBig .quickLabel {
+    font-size: 16px;
+  }
+  .quickTileBig .quickDesc {
+    font-size: 12.5px;
   }
 }

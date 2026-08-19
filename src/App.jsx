@@ -4,16 +4,19 @@ import TodayMenuPage from './components/TodayMenuPage'
 import CalendarPage from './components/CalendarPage'
 import GamePage from './components/GamePage'
 import VotePage from './components/VotePage'
+import { SchoolProvider } from './context/SchoolContext'
 
 function App() {
   return (
-    <Routes>
-      <Route path="/" element={<LandingPage />} />
-      <Route path="/menu" element={<TodayMenuPage />} />
-      <Route path="/calendar" element={<CalendarPage />} />
-      <Route path="/game" element={<GamePage />} />
-      <Route path="/vote" element={<VotePage />} />
-    </Routes>
+    <SchoolProvider>
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/menu" element={<TodayMenuPage />} />
+        <Route path="/calendar" element={<CalendarPage />} />
+        <Route path="/game" element={<GamePage />} />
+        <Route path="/vote" element={<VotePage />} />
+      </Routes>
+    </SchoolProvider>
   )
 }
 
