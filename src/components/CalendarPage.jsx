@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useSchool } from '../context/SchoolContext'
 import { fetchMeals } from '../api/schoolmeals'
-import { parseDishes, parseKcal, ALLERGENS as ALLERGEN_DEFS } from '../utils/parseMeal'
+import { parseDishes, parseKcal, parseInfoList, ALLERGENS as ALLERGEN_DEFS } from '../utils/parseMeal'
 import { monthRange, toYmd } from '../utils/date'
 import styles from './CalendarPage.module.css'
 
@@ -17,6 +17,15 @@ const ALLERGENS = ALLERGEN_DEFS.map((a, i) => ({
 }))
 
 const ALLERGEN_SHORT_LABEL = Object.fromEntries(ALLERGEN_DEFS.map((a) => [a.key, a.label]))
+
+function formatDetailDate(ymd) {
+  const y = Number(ymd.slice(0, 4))
+  const m = Number(ymd.slice(4, 6)) - 1
+  const d = Number(ymd.slice(6, 8))
+  return new Intl.DateTimeFormat('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' }).format(
+    new Date(y, m, d)
+  )
+}
 
 function buildMonthShell(year, month) {
   const firstDay = new Date(year, month, 1)
@@ -45,6 +54,7 @@ export default function CalendarPage() {
   const [mealMap, setMealMap] = useState({})
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [selectedDate, setSelectedDate] = useState(null)
 
   const weeks = useMemo(() => buildMonthShell(cursor.year, cursor.month), [cursor])
 
@@ -65,8 +75,11 @@ export default function CalendarPage() {
         const map = {}
         rows.forEach((row) => {
           map[row.MLSV_YMD] = {
+            mealType: row.MMEAL_SC_NM,
             dishes: parseDishes(row.DDISH_NM),
             kcal: parseKcal(row.CAL_INFO),
+            nutrition: parseInfoList(row.NTR_INFO),
+            origin: parseInfoList(row.ORPLC_INFO),
           }
         })
         setMealMap(map)
@@ -81,6 +94,10 @@ export default function CalendarPage() {
       cancelled = true
     }
   }, [school, cursor])
+
+  useEffect(() => {
+    setSelectedDate(null)
+  }, [cursor, school])
 
   const matchedCount = useMemo(() => {
     if (activeAllergens.length === 0) return 0
@@ -251,12 +268,17 @@ export default function CalendarPage() {
                         ? `${firstDish} 외 ${meal.dishes.length - 1}개`
                         : firstDish
                       : null
+                    const cellYmd = toYmd(cell.date)
+                    const isSelected = selectedDate === cellYmd
                     return (
-                      <div
+                      <button
                         key={`${wi}-${di}`}
+                        type="button"
                         className={styles.cell}
                         data-matched={matched ? 'true' : 'false'}
                         data-today={isToday ? 'true' : 'false'}
+                        data-selected={isSelected ? 'true' : 'false'}
+                        onClick={() => setSelectedDate((prev) => (prev === cellYmd ? null : cellYmd))}
                       >
                         <span className={styles.cellDate} data-sun={di === 0 ? 'true' : 'false'} data-sat={di === 6 ? 'true' : 'false'}>
                           {cell.day}
@@ -276,12 +298,93 @@ export default function CalendarPage() {
                             )}
                           </>
                         )}
-                      </div>
+                      </button>
                     )
                   })
                 )}
               </div>
             </div>
+
+            {selectedDate && (
+              <div className={styles.detailPanel}>
+                <div className={styles.detailHeader}>
+                  <div>
+                    <p className={styles.eyebrow}>{formatDetailDate(selectedDate)}</p>
+                    <h2 className={styles.detailTitle}>
+                      {mealMap[selectedDate] ? `${mealMap[selectedDate].mealType} 급식 상세` : '급식 정보 없음'}
+                    </h2>
+                  </div>
+                  <button type="button" className={styles.modalClose} aria-label="닫기" onClick={() => setSelectedDate(null)}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+                      <path d="M6 6l12 12M18 6L6 18" />
+                    </svg>
+                  </button>
+                </div>
+
+                {!mealMap[selectedDate] && (
+                  <p className={styles.noteText}>
+                    이 날은 급식 정보가 없어요. 주말·방학·공휴일이거나, 아직 학교에서 식단을 등록하지 않았을 수 있어요.
+                  </p>
+                )}
+
+                {mealMap[selectedDate] && (
+                  <>
+                    <ul className={styles.dishDetailList}>
+                      {mealMap[selectedDate].dishes.map((dish, i) => {
+                        const flagged = dish.allergens.some((a) => activeAllergens.includes(a))
+                        return (
+                          <li key={i} className={styles.dishDetailItem} data-flagged={flagged ? 'true' : 'false'}>
+                            <span>{dish.name}</span>
+                            {dish.allergens.length > 0 && (
+                              <span className={styles.dishAllergenTags}>
+                                {dish.allergens.map((a) => ALLERGEN_SHORT_LABEL[a]).join(', ')}
+                              </span>
+                            )}
+                          </li>
+                        )
+                      })}
+                    </ul>
+
+                    <div className={styles.detailStatsRow}>
+                      <div className={styles.detailStat}>
+                        <span className={styles.detailStatLabel}>칼로리</span>
+                        <span className={styles.detailStatValue}>
+                          {mealMap[selectedDate].kcal ? `${mealMap[selectedDate].kcal}kcal` : '정보 없음'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {mealMap[selectedDate].nutrition.length > 0 && (
+                      <div className={styles.detailSection}>
+                        <p className={styles.detailSectionTitle}>영양 정보</p>
+                        <div className={styles.nutritionGrid}>
+                          {mealMap[selectedDate].nutrition.map((n, i) => (
+                            <div key={i} className={styles.nutritionItem}>
+                              <span>{n.label}</span>
+                              <b>{n.value}</b>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {mealMap[selectedDate].origin.length > 0 && (
+                      <details className={styles.originDetails}>
+                        <summary>원산지 정보 보기</summary>
+                        <div className={styles.originGrid}>
+                          {mealMap[selectedDate].origin.map((o, i) => (
+                            <div key={i} className={styles.originItem}>
+                              <span>{o.label}</span>
+                              <b>{o.value}</b>
+                            </div>
+                          ))}
+                        </div>
+                      </details>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
 
             <div className={styles.legendBar}>
               <div className={styles.legendTab}>

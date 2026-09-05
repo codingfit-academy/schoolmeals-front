@@ -4,6 +4,7 @@ import MealTray from './MealTray'
 import { formatToday } from '../utils/formatToday'
 import { fetchSchools } from '../api/schoolmeals'
 import { useSchool } from '../context/SchoolContext'
+import { BEST_FOODS } from '../data/bestFoods'
 import styles from './LandingPage.module.css'
 
 const REGIONS = ['서울', '경기']
@@ -12,8 +13,8 @@ const QUICK_ACTIONS = [
   {
     key: 'calendar',
     to: '/calendar',
-    label: '급식 달력표',
-    desc: '날짜별 식단 한눈에',
+    label: '알레르기 체크표',
+    desc: '알레르기가 나오는 급식을 달력으로 한눈에',
     icon: (
       <>
         <rect x="3" y="4" width="18" height="17" rx="2" />
@@ -93,15 +94,6 @@ const QUICK_ACTIONS = [
       </>
     ),
   },
-]
-
-const BEST_FOODS = [
-  { rank: 1, name: '돈까스', kcal: 450, votes: 482, from: '#f4cf94', to: '#874f22' },
-  { rank: 2, name: '떡볶이', kcal: 320, votes: 411, from: '#ff9466', to: '#b8371e' },
-  { rank: 3, name: '제육볶음', kcal: 480, votes: 366, from: '#e2673c', to: '#8a321b' },
-  { rank: 4, name: '잡채', kcal: 210, votes: 298, from: '#e0b47e', to: '#7c4a20' },
-  { rank: 5, name: '치킨너겟', kcal: 350, votes: 274, from: '#f2c98a', to: '#a8703f' },
-  { rank: 6, name: '미역국', kcal: 90, votes: 233, from: '#8a6234', to: '#3d2513' },
 ]
 
 export default function LandingPage() {
@@ -198,14 +190,17 @@ export default function LandingPage() {
     return () => clearInterval(id)
   }, [])
 
-  // useEffect(() => {
-  //   const track = bestTrackRef.current
-  //   const child = track?.children[bestIndex]
-  //   if (!child) return
-  //   bestSyncingRef.current = true
-  //   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-  //   child.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', inline: 'start', block: 'nearest' })
-  // }, [bestIndex])
+  useEffect(() => {
+    const track = bestTrackRef.current
+    const child = track?.children[bestIndex]
+    if (!track || !child) return
+    bestSyncingRef.current = true
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    // track.scrollTo (not child.scrollIntoView) so only the card track's own
+    // scrollLeft moves — scrollIntoView can still nudge the page's vertical
+    // scroll even with block:'nearest', which yanked focus down the page.
+    track.scrollTo({ left: child.offsetLeft, behavior: reduceMotion ? 'auto' : 'smooth' })
+  }, [bestIndex])
 
   function handleBestScroll() {
     const track = bestTrackRef.current
@@ -436,7 +431,7 @@ export default function LandingPage() {
 
           <div className={styles.bestViewport} ref={bestTrackRef} onScroll={handleBestScroll}>
             {BEST_FOODS.map((food) => (
-              <article key={food.rank} className={styles.bestCard}>
+              <Link key={food.rank} to={`/food/${food.slug}`} className={styles.bestCard}>
                 <span className={styles.bestRank}>{food.rank}위</span>
                 <svg className={styles.bestArt} viewBox="0 0 100 60">
                   <defs>
@@ -459,7 +454,7 @@ export default function LandingPage() {
                   <span aria-hidden="true">·</span>
                   <span>찜 {food.votes.toLocaleString('ko-KR')}</span>
                 </p>
-              </article>
+              </Link>
             ))}
           </div>
 

@@ -56,3 +56,17 @@ export function parseKcal(calInfo) {
   const match = calInfo.match(/([\d.]+)/)
   return match ? Math.round(parseFloat(match[1])) : null
 }
+
+/** "라벨 : 값<br/>라벨 : 값" 형태의 문자열(NTR_INFO, ORPLC_INFO)을 [{ label, value }]로 파싱합니다. */
+export function parseInfoList(infoStr) {
+  if (!infoStr) return []
+  return infoStr
+    .split(/<br\s*\/?>/i)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const idx = line.indexOf(':')
+      if (idx === -1) return { label: line, value: '' }
+      return { label: line.slice(0, idx).trim(), value: line.slice(idx + 1).trim() }
+    })
+}

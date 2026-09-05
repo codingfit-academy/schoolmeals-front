@@ -447,6 +447,7 @@
 
 .cell {
   position: relative;
+  width: 100%;
   min-height: 78px;
   padding: 7px 8px;
   border-radius: 12px;
@@ -454,7 +455,22 @@
   background: #fffefb;
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
   gap: 4px;
+  font: inherit;
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.cell:hover {
+  border-color: var(--coral-400);
+}
+
+.cell:focus-visible {
+  outline: 2px solid var(--coral-500);
+  outline-offset: 2px;
 }
 
 .cell[data-today='true'] {
@@ -466,6 +482,11 @@
   background: var(--warn-100);
   border-color: var(--warn-600);
   box-shadow: inset 0 0 0 1px var(--warn-600);
+}
+
+.cell[data-selected='true'] {
+  outline: 2px solid var(--coral-600);
+  outline-offset: 1px;
 }
 
 .cellDate {
@@ -509,6 +530,165 @@
   font-weight: 700;
   color: var(--warn-600);
   line-height: 1.3;
+}
+
+/* ---- selected date detail panel ---- */
+
+.detailPanel {
+  margin-top: 26px;
+  padding: clamp(18px, 3vw, 26px);
+  border-radius: 22px;
+  background: #fffaf3;
+  border: 1.5px solid var(--coral-400);
+}
+
+.detailHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.detailTitle {
+  margin-top: 4px;
+  font-size: 19px;
+  font-weight: 800;
+  color: var(--text);
+  text-wrap: balance;
+}
+
+.dishDetailList {
+  margin-top: 16px;
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dishDetailItem {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--surface);
+  border: 1px solid var(--cal-border);
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.dishDetailItem[data-flagged='true'] {
+  background: var(--warn-100);
+  border-color: var(--warn-600);
+}
+
+.dishAllergenTags {
+  flex: none;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.dishDetailItem[data-flagged='true'] .dishAllergenTags {
+  color: var(--warn-600);
+}
+
+.detailStatsRow {
+  margin-top: 16px;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.detailStat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 16px;
+  border-radius: 12px;
+  background: var(--coral-100);
+}
+
+.detailStatLabel {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--coral-600);
+}
+
+.detailStatValue {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.detailSection {
+  margin-top: 18px;
+}
+
+.detailSectionTitle {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.nutritionGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 8px;
+}
+
+.nutritionItem {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: var(--surface);
+  border: 1px solid var(--cal-border);
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.nutritionItem b {
+  color: var(--text);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.originDetails {
+  margin-top: 16px;
+}
+
+.originDetails summary {
+  cursor: pointer;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--coral-600);
+}
+
+.originGrid {
+  margin-top: 10px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 6px;
+}
+
+.originItem {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+
+.originItem b {
+  color: var(--text);
+  font-weight: 700;
 }
 
 /* ---- legend bar ---- */
