@@ -61,7 +61,7 @@
   padding: clamp(24px, 5vw, 36px);
   background: var(--surface);
   border-radius: 30px;
-  box-shadow: 0 24px 60px rgba(42, 29, 20, 0.1);
+  box-shadow: 0 24px 60px rgba(32, 32, 30, 0.1);
   border: 1px solid var(--border);
   text-align: center;
 }
@@ -133,7 +133,7 @@
 
 .optionCard:hover {
   transform: translateY(-3px);
-  box-shadow: 0 14px 28px rgba(42, 29, 20, 0.14);
+  box-shadow: 0 14px 28px rgba(32, 32, 30, 0.14);
 }
 
 .optionCard:focus-visible {
