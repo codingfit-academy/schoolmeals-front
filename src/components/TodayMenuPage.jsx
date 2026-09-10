@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { formatToday } from '../utils/formatToday'
 import { toYmd } from '../utils/date'
 import { parseDishes, parseKcal, ALLERGEN_LABEL } from '../utils/parseMeal'
-import { fetchMeals } from '../api/schoolmeals'
+import { fetchMeals, fetchSchoolAi } from '../api/schoolmeals'
 import { useSchool } from '../context/SchoolContext'
 import styles from './TodayMenuPage.module.css'
 
@@ -12,6 +12,8 @@ export default function TodayMenuPage() {
   const [meal, setMeal] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [ai, setAi] = useState(null)
+  const [aiPending, setAiPending] = useState(false)
 
   useEffect(() => {
     if (!school) return
@@ -31,6 +33,27 @@ export default function TodayMenuPage() {
       })
       .finally(() => {
         if (!cancelled) setLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [school])
+
+  // AI 소개는 학교당 최초 1회만 생성되고, 이후 방문자는 서버 DB에 저장된 값을 받는다
+  useEffect(() => {
+    if (!school) return
+    let cancelled = false
+    setAi(null)
+    setAiPending(true)
+    fetchSchoolAi(school.officeCode, school.schoolCode)
+      .then((data) => {
+        if (!cancelled) setAi(data.content ?? null)
+      })
+      .catch(() => {
+        // 아직 생성 중이거나(503) 실패해도 급식 정보는 그대로 보여준다
+      })
+      .finally(() => {
+        if (!cancelled) setAiPending(false)
       })
     return () => {
       cancelled = true
@@ -97,6 +120,25 @@ export default function TodayMenuPage() {
               </li>
             )}
           </ul>
+        )}
+
+        {school && aiPending && !ai && (
+          <p className={styles.lede}>AI가 학교 소개를 준비하고 있어요...</p>
+        )}
+
+        {school && ai && (
+          <div className={styles.aiBlock}>
+            <p className={styles.eyebrow}>AI 학교 소개</p>
+            <p className={styles.aiIntro}>{ai.intro}</p>
+            {ai.highlights?.length > 0 && (
+              <ul className={styles.aiHighlights}>
+                {ai.highlights.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            )}
+            {ai.mealComment && <p className={styles.aiComment}>{ai.mealComment}</p>}
+          </div>
         )}
       </section>
     </div>

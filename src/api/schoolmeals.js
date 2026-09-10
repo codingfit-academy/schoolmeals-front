@@ -33,3 +33,14 @@ export async function fetchMeals({ officeCode, schoolCode, ymd, fromYmd, toYmd, 
   const data = await res.json()
   return data.mealServiceDietInfo?.[1]?.row ?? []
 }
+
+/**
+ * 학교 AI 소개를 가져옵니다.
+ * AI 호출은 학교당 최초 1회만 일어나고, 이후에는 서버 DB에 저장된 값이 옵니다.
+ * 다른 방문자가 생성 중이면 503이 오므로 잠시 후 다시 시도하면 됩니다.
+ */
+export async function fetchSchoolAi(officeCode, schoolCode) {
+  const res = await fetch(`${config.apiUrl}/schools/${officeCode}/${schoolCode}/ai`)
+  if (!res.ok) throw new Error(`학교 소개를 불러오지 못했어요 (${res.status})`)
+  return res.json()
+}
