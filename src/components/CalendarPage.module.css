@@ -596,6 +596,50 @@
   color: var(--warn-600);
 }
 
+/* ---- AI 알레르기 참고 정보 (공식 NEIS 데이터와 시각적으로 분리) ---- */
+
+.aiAllergenNote {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--cream-50);
+  border: 1px dashed var(--border);
+}
+
+.aiAllergenNoteTitle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.aiAllergenNoteList {
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.aiAllergenNoteList li {
+  font-size: 12.5px;
+  color: var(--text);
+}
+
+.aiAllergenNoteList b {
+  font-weight: 700;
+}
+
+.aiAllergenDisclaimer {
+  margin-top: 8px;
+  font-size: 10.5px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
 .detailStatsRow {
   margin-top: 16px;
   display: flex;

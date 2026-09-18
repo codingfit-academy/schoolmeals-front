@@ -5,6 +5,8 @@ import CalendarPage from './components/CalendarPage'
 import GamePage from './components/GamePage'
 import VotePage from './components/VotePage'
 import FoodDetailPage from './components/FoodDetailPage'
+import ProjectIntroPage from './components/ProjectIntroPage'
+import Footer from './components/Footer'
 import { SchoolProvider } from './context/SchoolContext'
 
 function App() {
@@ -17,7 +19,9 @@ function App() {
         <Route path="/game" element={<GamePage />} />
         <Route path="/vote" element={<VotePage />} />
         <Route path="/food/:slug" element={<FoodDetailPage />} />
+        <Route path="/project-intro" element={<ProjectIntroPage />} />
       </Routes>
+      <Footer />
     </SchoolProvider>
   )
 }

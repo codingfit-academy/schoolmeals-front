@@ -1,0 +1,53 @@
+.footer {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 18px clamp(16px, 5vw, 56px) 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.credit {
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+
+.badge {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--amber-600);
+  background: var(--amber-100);
+  border-radius: 999px;
+  padding: 4px 12px;
+  white-space: nowrap;
+}
+
+@media (prefers-color-scheme: dark) {
+  .badge {
+    background: rgba(232, 163, 61, 0.16);
+  }
+}
+
+.introLink {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-decoration: none;
+}
+
+.introLink:hover {
+  color: var(--amber-600);
+}

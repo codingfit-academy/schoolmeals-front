@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import MealTray from './MealTray'
 import { formatToday } from '../utils/formatToday'
 import { fetchSchools } from '../api/schoolmeals'
@@ -97,6 +97,7 @@ const QUICK_ACTIONS = [
 ]
 
 export default function LandingPage() {
+  const navigate = useNavigate()
   const heroRef = useRef(null)
   const filterRef = useRef(null)
   const searchInputRef = useRef(null)
@@ -319,6 +320,7 @@ export default function LandingPage() {
                         onClick={() => {
                           setSchool(s)
                           setFilterOpen(false)
+                          navigate('/menu')
                         }}
                       >
                         {s.name}
@@ -347,7 +349,6 @@ export default function LandingPage() {
         </div>
 
         <div className={styles.heroActions}>
-          <Link className={styles.cta} to="/menu">오늘 식단 확인하기</Link>
           <a className={styles.scrollCue} href="#more">
             더 알아보기
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

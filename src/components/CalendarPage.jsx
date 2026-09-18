@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useSchool } from '../context/SchoolContext'
-import { fetchMeals } from '../api/schoolmeals'
+import { fetchMeals, fetchAllergenNotes } from '../api/schoolmeals'
 import { parseDishes, parseKcal, parseInfoList, ALLERGENS as ALLERGEN_DEFS } from '../utils/parseMeal'
-import { monthRange, toYmd } from '../utils/date'
+import { monthRange, toYmd, buildMonthShell } from '../utils/date'
 import styles from './CalendarPage.module.css'
 
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토']
@@ -18,6 +18,12 @@ const ALLERGENS = ALLERGEN_DEFS.map((a, i) => ({
 
 const ALLERGEN_SHORT_LABEL = Object.fromEntries(ALLERGEN_DEFS.map((a) => [a.key, a.label]))
 
+const ALLERGEN_STORAGE_KEY = 'schoolmeals:allergens'
+
+function toDashedYmd(ymd) {
+  return `${ymd.slice(0, 4)}-${ymd.slice(4, 6)}-${ymd.slice(6, 8)}`
+}
+
 function formatDetailDate(ymd) {
   const y = Number(ymd.slice(0, 4))
   const m = Number(ymd.slice(4, 6)) - 1
@@ -27,34 +33,24 @@ function formatDetailDate(ymd) {
   )
 }
 
-function buildMonthShell(year, month) {
-  const firstDay = new Date(year, month, 1)
-  const startWeekday = firstDay.getDay()
-  const daysInMonth = new Date(year, month + 1, 0).getDate()
-
-  const cells = []
-  for (let i = 0; i < startWeekday; i++) cells.push(null)
-  for (let day = 1; day <= daysInMonth; day++) {
-    const date = new Date(year, month, day)
-    cells.push({ day, date, isWeekend: date.getDay() === 0 || date.getDay() === 6 })
-  }
-  while (cells.length % 7 !== 0) cells.push(null)
-
-  const weeks = []
-  for (let i = 0; i < cells.length; i += 7) weeks.push(cells.slice(i, i + 7))
-  return weeks
-}
-
 export default function CalendarPage() {
   const { school } = useSchool()
   const today = useMemo(() => new Date(), [])
   const [cursor, setCursor] = useState({ year: today.getFullYear(), month: today.getMonth() })
-  const [activeAllergens, setActiveAllergens] = useState([])
+  const [activeAllergens, setActiveAllergens] = useState(() => {
+    try {
+      const raw = localStorage.getItem(ALLERGEN_STORAGE_KEY)
+      return raw ? JSON.parse(raw) : []
+    } catch {
+      return []
+    }
+  })
   const [modalOpen, setModalOpen] = useState(false)
   const [mealMap, setMealMap] = useState({})
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [selectedDate, setSelectedDate] = useState(null)
+  const [allergenNotes, setAllergenNotes] = useState({})
 
   const weeks = useMemo(() => buildMonthShell(cursor.year, cursor.month), [cursor])
 
@@ -95,6 +91,31 @@ export default function CalendarPage() {
     }
   }, [school, cursor])
 
+  // AI(Gemini)가 NEIS 공식 알레르기 코드에서 빠졌을 수 있는 성분을 보완합니다 (참고용).
+  // 학교×날짜 단위로 서버에 캐시되어, 메뉴가 그대로면 이 달을 다시 봐도 AI가 재호출되지 않습니다.
+  useEffect(() => {
+    if (!school) return
+    const days = Object.entries(mealMap)
+      .filter(([, meal]) => meal.dishes.length > 0)
+      .map(([ymd, meal]) => ({
+        mlsv_ymd: ymd,
+        dishes: meal.dishes.map((d) => ({ name: d.name, knownAllergens: d.allergens })),
+      }))
+    if (days.length === 0) return
+
+    let cancelled = false
+    fetchAllergenNotes({ officeCode: school.officeCode, schoolCode: school.schoolCode, days })
+      .then((data) => {
+        if (!cancelled) setAllergenNotes((prev) => ({ ...prev, ...(data.notes || {}) }))
+      })
+      .catch(() => {
+        // 참고용 보완 정보라 실패해도 달력 자체(공식 정보)는 정상 동작해야 하므로 조용히 무시
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [school, mealMap])
+
   useEffect(() => {
     setSelectedDate(null)
   }, [cursor, school])
@@ -127,6 +148,19 @@ export default function CalendarPage() {
       document.body.style.overflow = ''
     }
   }, [modalOpen])
+
+  // 선택한 알레르기 필터를 이 브라우저에 저장해, 다음에 같은 컴퓨터로 들어와도 유지되게 합니다.
+  useEffect(() => {
+    try {
+      if (activeAllergens.length > 0) {
+        localStorage.setItem(ALLERGEN_STORAGE_KEY, JSON.stringify(activeAllergens))
+      } else {
+        localStorage.removeItem(ALLERGEN_STORAGE_KEY)
+      }
+    } catch {
+      // localStorage를 쓸 수 없는 환경이면 조용히 무시
+    }
+  }, [activeAllergens])
 
   function toggleAllergen(key) {
     setActiveAllergens((prev) => (prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]))
@@ -344,6 +378,29 @@ export default function CalendarPage() {
                         )
                       })}
                     </ul>
+
+                    {allergenNotes[toDashedYmd(selectedDate)]?.length > 0 && (
+                      <div className={styles.aiAllergenNote}>
+                        <p className={styles.aiAllergenNoteTitle}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M12 3.5 21 20H3z" />
+                            <path d="M12 10v4.5" />
+                            <circle cx="12" cy="17.3" r="0.6" fill="currentColor" stroke="none" />
+                          </svg>
+                          AI 참고 정보 (공식 정보 아님)
+                        </p>
+                        <ul className={styles.aiAllergenNoteList}>
+                          {allergenNotes[toDashedYmd(selectedDate)].map((n, i) => (
+                            <li key={i}>
+                              <b>{n.dish}</b>에 <b>{ALLERGEN_SHORT_LABEL[n.allergen] ?? n.allergen}</b> 성분이 있을 수 있어요.
+                            </li>
+                          ))}
+                        </ul>
+                        <p className={styles.aiAllergenDisclaimer}>
+                          메뉴 이름만 보고 AI가 추정한 참고용 정보이며 실제와 다를 수 있어요. 정확한 정보는 학교 급식실에 문의해주세요.
+                        </p>
+                      </div>
+                    )}
 
                     <div className={styles.detailStatsRow}>
                       <div className={styles.detailStat}>

@@ -12,3 +12,26 @@ export function monthRange(year, month) {
   const to = new Date(year, month + 1, 0)
   return { fromYmd: toYmd(from), toYmd: toYmd(to) }
 }
+
+/**
+ * 달력 표 렌더링용 주 단위 셀 배열을 만듭니다.
+ * 월의 시작 요일 앞/끝 뒤는 null로 채워 7의 배수가 되게 합니다.
+ * 반환값: [[{day, date, isWeekend} | null, ...7개], ...]
+ */
+export function buildMonthShell(year, month) {
+  const firstDay = new Date(year, month, 1)
+  const startWeekday = firstDay.getDay()
+  const daysInMonth = new Date(year, month + 1, 0).getDate()
+
+  const cells = []
+  for (let i = 0; i < startWeekday; i++) cells.push(null)
+  for (let day = 1; day <= daysInMonth; day++) {
+    const date = new Date(year, month, day)
+    cells.push({ day, date, isWeekend: date.getDay() === 0 || date.getDay() === 6 })
+  }
+  while (cells.length % 7 !== 0) cells.push(null)
+
+  const weeks = []
+  for (let i = 0; i < cells.length; i += 7) weeks.push(cells.slice(i, i + 7))
+  return weeks
+}

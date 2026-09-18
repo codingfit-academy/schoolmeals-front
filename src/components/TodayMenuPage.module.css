@@ -46,17 +46,6 @@
   border-radius: 4px;
 }
 
-.topbarDate {
-  font-size: 13px;
-  color: var(--text-muted);
-  font-variant-numeric: tabular-nums;
-}
-
-.topbarDate b {
-  color: var(--text);
-  font-weight: 700;
-}
-
 /* ---- shared section shell ---- */
 
 .section {
@@ -67,6 +56,25 @@
 
 .section + .section {
   border-top: 1px solid var(--border);
+}
+
+.sectionTitle {
+  margin-top: 6px;
+  font-size: clamp(18px, 2.8vw, 22px);
+  font-weight: 800;
+  color: var(--text);
+  text-wrap: balance;
+}
+
+.videoTopicNote {
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.videoTopicNote b {
+  color: var(--amber-600);
+  font-weight: 800;
 }
 
 /* ---- intro ---- */
@@ -128,6 +136,68 @@
   color: var(--amber-500);
 }
 
+/* ---- 알레르기 달력 배너 ---- */
+
+.allergyBanner {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: linear-gradient(135deg, var(--amber-100), var(--surface-2));
+  border: 1px solid var(--amber-500);
+  border-radius: 20px;
+  padding: 18px 22px;
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.allergyBanner:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 28px rgba(32, 32, 30, 0.12);
+}
+
+.allergyBannerIcon {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: var(--amber-500);
+  color: #2a1a08;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.allergyBannerText {
+  flex: 1;
+  min-width: 0;
+}
+
+.allergyBannerText b {
+  display: block;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.allergyBannerText p {
+  margin-top: 3px;
+  font-size: 12.5px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.allergyBannerArrow {
+  flex: none;
+  color: var(--amber-600);
+}
+
+@media (prefers-color-scheme: dark) {
+  .allergyBanner {
+    background: linear-gradient(135deg, rgba(232, 163, 61, 0.14), var(--surface-2));
+  }
+}
+
 /* ---- showcase: tray + videos ---- */
 
 .showcaseGrid {
@@ -177,10 +247,59 @@
   color: rgba(230, 230, 228, 0.6);
 }
 
-.videoList {
+.videoShowcase {
+  margin-top: 18px;
+  display: grid;
+  grid-template-columns: 1.6fr 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+/* ---- main (largest, highest view count) video ---- */
+
+.videoMain {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.videoMainThumb {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 18px;
+  overflow: hidden;
+  background-color: var(--border);
+  background-size: cover;
+  background-position: center;
+  transition: box-shadow 0.2s ease;
+}
+
+.videoMain:hover .videoMainThumb {
+  box-shadow: 0 18px 36px rgba(32, 32, 30, 0.18);
+}
+
+.videoMainMeta h3 {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1.4;
+}
+
+.videoMainMeta p {
+  margin-top: 5px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/* ---- side (smaller) videos ---- */
+
+.videoSideList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .videoCard {
@@ -190,6 +309,8 @@
   border: 1px solid var(--border);
   border-radius: 16px;
   padding: 10px;
+  text-decoration: none;
+  color: inherit;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -205,6 +326,9 @@
   height: 76px;
   border-radius: 11px;
   overflow: hidden;
+  background-color: var(--border);
+  background-size: cover;
+  background-position: center;
 }
 
 .thumbPlay {
@@ -225,15 +349,20 @@
   justify-content: center;
 }
 
+.thumbPlayBig span {
+  width: 52px;
+  height: 52px;
+}
+
 .thumbDuration {
   position: absolute;
-  right: 5px;
-  bottom: 5px;
-  background: rgba(0, 0, 0, 0.65);
-  color: #fdf6e6;
-  font-size: 10px;
+  right: 6px;
+  bottom: 6px;
+  background: rgba(0, 0, 0, 0.7);
+  color: #f5f5f3;
+  font-size: 10.5px;
   font-weight: 700;
-  padding: 2px 5px;
+  padding: 3px 6px;
   border-radius: 5px;
   font-variant-numeric: tabular-nums;
 }
@@ -269,151 +398,334 @@
   color: var(--text-muted);
 }
 
-/* ---- tips ---- */
-
-.tips h2,
-.health h2 {
-  font-size: clamp(20px, 2.8vw, 26px);
-  font-weight: 800;
-  color: var(--text);
-  margin-top: 8px;
-  text-wrap: balance;
+@media (max-width: 760px) {
+  .videoShowcase {
+    grid-template-columns: 1fr;
+  }
 }
 
-.tipList {
-  list-style: none;
-  counter-reset: tip;
-  margin: 26px 0 0;
-  padding: 0;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 16px;
-}
+/* ---- 맛있게 먹는 방법 ---- */
 
-.tipList li {
-  counter-increment: tip;
-  position: relative;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: 18px;
-  padding: 20px 18px 18px;
-}
-
-.tipList li::before {
-  content: counter(tip);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 26px;
-  height: 26px;
-  border-radius: 999px;
-  background: var(--amber-500);
-  color: #2a1a08;
-  font-size: 12.5px;
-  font-weight: 800;
-  margin-bottom: 10px;
-  font-variant-numeric: tabular-nums;
-}
-
-.tipList b {
-  display: block;
-  font-size: 14.5px;
-  font-weight: 700;
-  color: var(--text);
-  margin-bottom: 5px;
-}
-
-.tipList p {
-  font-size: 13px;
-  color: var(--text-muted);
-  line-height: 1.55;
-}
-
-/* ---- health ---- */
-
-.healthSummary {
+.eatingTipCard {
   margin-top: 18px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
   background: var(--surface-2);
   border: 1px solid var(--border);
   border-radius: 16px;
-  padding: 16px 20px;
+  padding: 18px 20px;
 }
 
-.healthKcal {
-  font-size: 22px;
-  font-weight: 800;
-  color: var(--amber-600);
-  font-variant-numeric: tabular-nums;
-}
-
-.healthSummary p {
-  font-size: 13px;
-  color: var(--text-muted);
-  line-height: 1.6;
-}
-
-.healthGrid {
-  margin-top: 18px;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 14px;
-}
-
-.healthCard {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  border-radius: 16px;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  padding: 16px 18px;
-}
-
-.healthText {
-  flex: 1;
-  min-width: 0;
-}
-
-.healthText h3 {
-  font-size: 14.5px;
-  font-weight: 700;
+.eatingTipCard p {
+  font-size: 14px;
+  line-height: 1.7;
   color: var(--text);
-  margin-bottom: 6px;
 }
 
-.healthText p {
-  font-size: 12.5px;
-  color: var(--text-muted);
-  line-height: 1.6;
-}
+/* ---- 건강 포인트 (인바디 결과지 느낌의 인체 그림) ---- */
 
-.healthBody {
-  flex: none;
-  width: 60px;
+.healthShowcase {
+  margin-top: 18px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
 }
 
-.bodyMap {
-  width: 44px;
+.bodyDiagram {
+  width: 100%;
+  max-width: 220px;
   height: auto;
-  filter: drop-shadow(0 3px 4px rgba(32, 32, 30, 0.15));
+  filter: drop-shadow(0 8px 14px rgba(32, 32, 30, 0.1));
 }
 
-.healthBodyLabel {
+.bodyShape {
+  fill: var(--surface-2);
+  stroke: var(--border);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+
+.bodyDot circle {
+  fill: var(--amber-500);
+  stroke: var(--surface);
+  stroke-width: 3;
+}
+
+.bodyDot text {
+  font-size: 14px;
+  font-weight: 800;
+  fill: #2a1a08;
+}
+
+.healthList {
+  margin: 22px 0 0;
+  padding: 0;
+  width: 100%;
+  max-width: 640px;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px 20px;
+}
+
+.healthList li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  text-align: left;
+}
+
+.healthListNum {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: var(--amber-500);
+  color: #2a1a08;
   font-size: 11px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-variant-numeric: tabular-nums;
+  margin-top: 1px;
+}
+
+.healthList b {
+  display: block;
+  font-size: 13.5px;
   font-weight: 700;
-  white-space: nowrap;
+  color: var(--text);
+}
+
+.healthList p {
+  margin-top: 2px;
+  font-size: 12.5px;
+  color: var(--text-muted);
+  line-height: 1.55;
 }
 
 @media (max-width: 760px) {
   .showcaseGrid {
     grid-template-columns: 1fr;
+  }
+}
+
+/* ---- 달력별 급식표 ---- */
+
+.calHead {
+  margin-top: 18px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.calNav {
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--cream-50);
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex: none;
+}
+
+.calNav:hover {
+  border-color: var(--amber-500);
+  color: var(--amber-600);
+}
+
+.calMonthLabel {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.calTodayBtn {
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--amber-600);
+  background: var(--amber-100);
+  border: none;
+  border-radius: 999px;
+  padding: 7px 12px;
+  cursor: pointer;
+  margin-left: 4px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .calTodayBtn {
+    background: rgba(232, 163, 61, 0.16);
+  }
+}
+
+.calWeekHeader {
+  margin-top: 18px;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  background: var(--amber-500);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.calWeekHeaderCell {
+  text-align: center;
+  padding: 8px 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: #2a1a08;
+}
+
+.calGrid {
+  margin-top: 8px;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+
+.calCellEmpty {
+  min-height: 64px;
+}
+
+.calCell {
+  position: relative;
+  width: 100%;
+  min-height: 64px;
+  padding: 7px 8px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  font: inherit;
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.calCell:hover {
+  border-color: var(--amber-500);
+}
+
+.calCell[data-today='true'] {
+  border-color: var(--amber-500);
+  box-shadow: inset 0 0 0 1.5px var(--amber-500);
+}
+
+.calCell[data-selected='true'] {
+  outline: 2px solid var(--amber-600);
+  outline-offset: 1px;
+}
+
+.calCellDate {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.calCellDate[data-sun='true'] {
+  color: var(--kimchi-600);
+}
+
+.calCellDishList {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.calCellDishItem {
+  font-size: 10.5px;
+  color: var(--text);
+  line-height: 1.35;
+  word-break: keep-all;
+}
+
+.calDetail {
+  margin-top: 18px;
+  padding: 18px 20px;
+  border-radius: 18px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+}
+
+.calDetailHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.calDetailClose {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.calDetailClose:hover {
+  border-color: var(--amber-500);
+  color: var(--amber-600);
+}
+
+.calDishList {
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.calDishList li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.calDishAllergens {
+  flex: none;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.calDetailKcal {
+  margin-top: 14px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--amber-600);
+}
+
+@media (max-width: 640px) {
+  .calCell {
+    min-height: 54px;
+    padding: 5px 6px;
+  }
+  .calCellDishItem {
+    font-size: 9.5px;
   }
 }

@@ -1,0 +1,445 @@
+.page {
+  font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont,
+    'Apple SD Gothic Neo', 'Malgun Gothic', 'Segoe UI', sans-serif;
+  background: var(--cream-50);
+  color: var(--text);
+  min-height: 100vh;
+  padding-bottom: 60px;
+}
+
+.eyebrow {
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: var(--amber-600);
+  text-transform: uppercase;
+}
+
+/* ---- top bar ---- */
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 20px clamp(16px, 5vw, 56px);
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.backLink:hover {
+  color: var(--amber-600);
+}
+
+.topbarTitle {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.sheet {
+  max-width: 720px;
+  margin: clamp(24px, 5vw, 44px) auto 0;
+  padding: clamp(20px, 4vw, 34px);
+}
+
+.lede {
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--text-muted);
+}
+
+/* ---- hero ---- */
+
+.hero {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: clamp(36px, 6vw, 64px) clamp(18px, 5vw, 40px) clamp(24px, 4vw, 36px);
+}
+
+.hero h1 {
+  margin-top: 8px;
+  font-size: clamp(26px, 4.2vw, 36px);
+  font-weight: 800;
+  color: var(--text);
+  text-wrap: balance;
+}
+
+.tagline {
+  margin-top: 6px;
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--amber-600);
+}
+
+.hero .lede {
+  margin-top: 14px;
+  max-width: 62ch;
+}
+
+.repoRow {
+  margin-top: 18px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.repoBadge {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 7px 14px;
+}
+
+.repoBadge b {
+  color: var(--text);
+  font-weight: 700;
+  margin-right: 6px;
+}
+
+/* ---- shared section shell ---- */
+
+.section {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: clamp(28px, 5vw, 44px) clamp(18px, 5vw, 40px);
+  border-top: 1px solid var(--border);
+}
+
+.sectionTitle {
+  margin-top: 6px;
+  font-size: clamp(19px, 2.8vw, 24px);
+  font-weight: 800;
+  color: var(--text);
+  text-wrap: balance;
+}
+
+.section .lede {
+  margin-top: 10px;
+}
+
+.subLabel {
+  margin-top: 22px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+/* ---- info cards ---- */
+
+.infoGrid,
+.stackGrid,
+.apiGrid {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.capabilityList {
+  margin-top: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.capabilityCard {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 18px 20px;
+}
+
+.capabilityCard .infoGrid {
+  margin-top: 14px;
+}
+
+.capabilityCard .infoCard {
+  background: var(--surface);
+}
+
+.capabilityTitle {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.infoCard {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 16px 18px;
+}
+
+.infoCard b {
+  display: block;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+
+.infoCard p {
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.kvList {
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.kvList li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.kvList code {
+  flex: none;
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--amber-600);
+  background: var(--amber-100);
+  border-radius: 6px;
+  padding: 1px 6px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .kvList code {
+    background: rgba(232, 163, 61, 0.16);
+  }
+}
+
+.kvList span {
+  color: var(--text-muted);
+  flex: 1;
+  min-width: 0;
+}
+
+.checkList {
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.checkList li {
+  position: relative;
+  padding-left: 18px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
+.checkList li::before {
+  content: '';
+  position: absolute;
+  left: 2px;
+  top: 8px;
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--amber-500);
+}
+
+/* ---- prompts ---- */
+
+.promptList {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.promptCard {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 18px 20px;
+}
+
+.promptHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.promptHead h3 {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text);
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+}
+
+.unusedBadge {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--text-muted);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 3px 9px;
+}
+
+.promptMeta {
+  margin-top: 8px;
+  font-size: 12.5px;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+.promptMeta b {
+  color: var(--text);
+  font-weight: 700;
+  margin-right: 4px;
+}
+
+.promptExample {
+  margin-top: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--text);
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+/* ---- external apis ---- */
+
+.apiEndpoints {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  opacity: 0.85;
+}
+
+.quotaNote {
+  margin-top: 6px;
+  font-size: 11.5px;
+  color: var(--amber-600);
+}
+
+/* ---- call policy table ---- */
+
+.tableWrap {
+  margin-top: 12px;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+}
+
+.policyTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+
+.policyTable th,
+.policyTable td {
+  text-align: left;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.policyTable th {
+  background: var(--surface-2);
+  color: var(--text-muted);
+  font-weight: 700;
+  font-size: 11.5px;
+}
+
+.policyTable td {
+  color: var(--text);
+}
+
+.policyTable tr:last-child td {
+  border-bottom: none;
+}
+
+/* ---- features ---- */
+
+.featureGrid {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 12px;
+}
+
+.featureCard {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 16px 18px;
+}
+
+.featureHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.featureHead b {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.aiBadge {
+  font-size: 10px;
+  font-weight: 800;
+  color: #2a1a08;
+  background: var(--amber-500);
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+
+.featureRoute {
+  margin-top: 3px;
+  font-size: 11px;
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  color: var(--text-muted);
+}
+
+.featureCard p {
+  margin-top: 8px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
+.featureSource {
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--amber-600);
+}
