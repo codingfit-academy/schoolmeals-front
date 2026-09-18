@@ -1,35 +1,27 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { castVote, fetchVotes } from '../api/engagement'
+import { fetchYoutubeVideos } from '../api/youtube'
 import styles from './VotePage.module.css'
+
+const VOTED_STORAGE_KEY = 'schoolmeals:votedWeek'
 
 const OPTIONS = [
   {
     key: 'a',
     title: '김치 한 입 먼저, 입맛 스타트',
     desc: '새콤한 배추김치로 입맛을 돋운 뒤 식사를 시작해요.',
-    baseline: 214,
-    video: {
-      title: '김치 없인 못 살아, 급식 브이로그',
-      channel: '밥친구 소라',
-      duration: '6:45',
-      views: '5.2만',
-      from: '#e2673c',
-      to: '#8a321b',
-    },
+    searchQuery: '김치 급식 먹방',
+    from: '#e2673c',
+    to: '#8a321b',
   },
   {
     key: 'b',
     title: '국물 먼저 호로록',
     desc: '뜨끈한 국으로 속을 데운 다음 나머지를 먹어요.',
-    baseline: 253,
-    video: {
-      title: '된장찌개 국물까지 완샷! 급식 먹방',
-      channel: '든든한 한끼',
-      duration: '11:03',
-      views: '8.7만',
-      from: '#8a6234',
-      to: '#3d2513',
-    },
+    searchQuery: '된장찌개 급식 먹방',
+    from: '#8a6234',
+    to: '#3d2513',
   },
 ]
 
@@ -47,29 +39,81 @@ function getWeekRange() {
 
 const WEEK_RANGE = getWeekRange()
 
+function readVoted(week) {
+  try {
+    const raw = JSON.parse(localStorage.getItem(VOTED_STORAGE_KEY) ?? 'null')
+    return raw?.week === week ? raw.optionKey : null
+  } catch {
+    return null
+  }
+}
+
 export default function VotePage() {
-  const [votes, setVotes] = useState(() => Object.fromEntries(OPTIONS.map((o) => [o.key, o.baseline])))
+  const [votes, setVotes] = useState(() => Object.fromEntries(OPTIONS.map((o) => [o.key, 0])))
   const [myVote, setMyVote] = useState(null)
+  const [videos, setVideos] = useState({})
+
+  useEffect(() => {
+    let cancelled = false
+    fetchVotes()
+      .then(({ week, counts }) => {
+        if (cancelled) return
+        setVotes(Object.fromEntries(OPTIONS.map((o) => [o.key, counts[o.key] ?? 0])))
+        setMyVote(readVoted(week))
+      })
+      .catch(() => {
+        // 결과를 못 받아도 투표 자체는 할 수 있게 둔다
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  useEffect(() => {
+    let cancelled = false
+    // 검색어당 서버가 유튜브를 1회만 호출하고, 이후에는 저장된 결과를 내려준다
+    Promise.all(
+      OPTIONS.map((o) =>
+        fetchYoutubeVideos(o.searchQuery, 1)
+          .then((rows) => [o.key, rows[0] ?? null])
+          .catch(() => [o.key, null])
+      )
+    ).then((entries) => {
+      if (!cancelled) setVideos(Object.fromEntries(entries))
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const total = votes.a + votes.b
   const hasVoted = myVote !== null
-  const pctA = Math.round((votes.a / total) * 100)
+  const pctA = total === 0 ? 50 : Math.round((votes.a / total) * 100)
   const pctB = 100 - pctA
 
-  function castVote(key) {
-    if (key === myVote) return
-    setVotes((prev) => {
-      const next = { ...prev }
-      if (myVote) next[myVote] -= 1
-      next[key] += 1
-      return next
-    })
+  function handleVote(key) {
+    if (hasVoted) return
+    setVotes((prev) => ({ ...prev, [key]: prev[key] + 1 }))
     setMyVote(key)
+    castVote(key)
+      .then(({ week, count }) => {
+        setVotes((prev) => ({ ...prev, [key]: count }))
+        try {
+          localStorage.setItem(VOTED_STORAGE_KEY, JSON.stringify({ week, optionKey: key }))
+        } catch {
+          // localStorage를 쓸 수 없는 환경이면 조용히 무시
+        }
+      })
+      .catch(() => {
+        setVotes((prev) => ({ ...prev, [key]: Math.max(0, prev[key] - 1) }))
+        setMyVote(null)
+      })
   }
 
   function renderOption(opt, pct) {
     const voted = myVote === opt.key
     const isWinner = hasVoted && pct > 50
+    const video = videos[opt.key]
 
     return (
       <button
@@ -77,12 +121,15 @@ export default function VotePage() {
         type="button"
         className={styles.optionCard}
         data-voted={voted ? 'true' : 'false'}
-        onClick={() => castVote(opt.key)}
+        onClick={() => handleVote(opt.key)}
       >
         {isWinner && <span className={styles.winnerTag}>👑 BEST</span>}
         {voted && <span className={styles.checkBadge}>✓</span>}
 
-        <div className={styles.thumb} style={{ background: `linear-gradient(135deg, ${opt.video.from}, ${opt.video.to})` }}>
+        <div className={styles.thumb} style={{ background: `linear-gradient(135deg, ${opt.from}, ${opt.to})` }}>
+          {video?.thumbnail && (
+            <img className={styles.thumbImg} src={video.thumbnail} alt="" loading="lazy" />
+          )}
           <div className={styles.thumbPlay}>
             <span>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="#2a1a08">
@@ -90,11 +137,13 @@ export default function VotePage() {
               </svg>
             </span>
           </div>
-          <span className={styles.thumbDuration}>{opt.video.duration}</span>
+          {video?.duration && <span className={styles.thumbDuration}>{video.duration}</span>}
         </div>
 
-        <p className={styles.videoTitle}>{opt.video.title}</p>
-        <p className={styles.videoMeta}>{opt.video.channel} · 조회수 {opt.video.views}</p>
+        <p className={styles.videoTitle}>{video?.title ?? '영상을 불러오는 중이에요'}</p>
+        <p className={styles.videoMeta}>
+          {video ? `${video.channelTitle} · 조회수 ${video.views}` : ' '}
+        </p>
 
         <p className={styles.optionLabel}>{opt.title}</p>
         <p className={styles.optionDesc}>{opt.desc}</p>

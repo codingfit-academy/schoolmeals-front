@@ -3,8 +3,9 @@ import { Link, useNavigate } from 'react-router-dom'
 import MealTray from './MealTray'
 import { formatToday } from '../utils/formatToday'
 import { fetchSchools } from '../api/schoolmeals'
+import { fetchFoodLikes } from '../api/engagement'
 import { useSchool } from '../context/SchoolContext'
-import { BEST_FOODS } from '../data/bestFoods'
+import { rankFoods } from '../data/bestFoods'
 import styles from './LandingPage.module.css'
 
 const REGIONS = ['서울', '경기']
@@ -116,6 +117,7 @@ export default function LandingPage() {
   const bestScrollTimeoutRef = useRef(null)
   const bestSyncingRef = useRef(false)
   const [bestIndex, setBestIndex] = useState(0)
+  const [bestFoods, setBestFoods] = useState(() => rankFoods([]))
 
   useEffect(() => {
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -181,15 +183,29 @@ export default function LandingPage() {
   const visibleSchools = schools.filter((s) => s.name?.includes(search.trim()))
 
   useEffect(() => {
+    let cancelled = false
+    fetchFoodLikes()
+      .then((likes) => {
+        if (!cancelled) setBestFoods(rankFoods(likes))
+      })
+      .catch(() => {
+        // 찜 정보를 못 받아도 카탈로그 기본 순서로 계속 보여준다
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  useEffect(() => {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
 
     const id = setInterval(() => {
       if (bestPausedRef.current) return
-      setBestIndex((i) => (i + 1) % BEST_FOODS.length)
+      setBestIndex((i) => (i + 1) % bestFoods.length)
     }, 3800)
 
     return () => clearInterval(id)
-  }, [])
+  }, [bestFoods.length])
 
   useEffect(() => {
     const track = bestTrackRef.current
@@ -412,7 +428,7 @@ export default function LandingPage() {
               <button
                 type="button"
                 aria-label="이전 메뉴"
-                onClick={() => setBestIndex((i) => (i - 1 + BEST_FOODS.length) % BEST_FOODS.length)}
+                onClick={() => setBestIndex((i) => (i - 1 + bestFoods.length) % bestFoods.length)}
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M15 6l-6 6 6 6" />
@@ -421,7 +437,7 @@ export default function LandingPage() {
               <button
                 type="button"
                 aria-label="다음 메뉴"
-                onClick={() => setBestIndex((i) => (i + 1) % BEST_FOODS.length)}
+                onClick={() => setBestIndex((i) => (i + 1) % bestFoods.length)}
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M9 6l6 6-6 6" />
@@ -431,38 +447,47 @@ export default function LandingPage() {
           </div>
 
           <div className={styles.bestViewport} ref={bestTrackRef} onScroll={handleBestScroll}>
-            {BEST_FOODS.map((food) => (
-              <Link key={food.rank} to={`/food/${food.slug}`} className={styles.bestCard}>
+            {bestFoods.map((food) => (
+              <Link key={food.slug} to={`/food/${food.slug}`} className={styles.bestCard}>
                 <span className={styles.bestRank}>{food.rank}위</span>
-                <svg className={styles.bestArt} viewBox="0 0 100 60">
-                  <defs>
-                    <linearGradient id={`bestGrad-${food.rank}`} x1="10%" y1="0%" x2="90%" y2="100%">
-                      <stop offset="0%" stopColor={food.from} />
-                      <stop offset="100%" stopColor={food.to} />
-                    </linearGradient>
-                  </defs>
-                  <rect x="5" y="8" width="90" height="44" rx="18" fill={`url(#bestGrad-${food.rank})`} />
-                  <ellipse cx="32" cy="20" rx="16" ry="7" fill="#ffffff" opacity="0.25" />
-                  <g fill="#ffffff" opacity="0.35">
-                    <circle cx="60" cy="30" r="1.6" />
-                    <circle cx="70" cy="24" r="1.4" />
-                    <circle cx="50" cy="38" r="1.4" />
-                  </g>
-                </svg>
+                {food.image ? (
+                  <img
+                    className={styles.bestArt}
+                    src={food.image}
+                    alt={food.name}
+                    loading="lazy"
+                  />
+                ) : (
+                  <svg className={styles.bestArt} viewBox="0 0 100 60">
+                    <defs>
+                      <linearGradient id={`bestGrad-${food.slug}`} x1="10%" y1="0%" x2="90%" y2="100%">
+                        <stop offset="0%" stopColor={food.from} />
+                        <stop offset="100%" stopColor={food.to} />
+                      </linearGradient>
+                    </defs>
+                    <rect x="5" y="8" width="90" height="44" rx="18" fill={`url(#bestGrad-${food.slug})`} />
+                    <ellipse cx="32" cy="20" rx="16" ry="7" fill="#ffffff" opacity="0.25" />
+                    <g fill="#ffffff" opacity="0.35">
+                      <circle cx="60" cy="30" r="1.6" />
+                      <circle cx="70" cy="24" r="1.4" />
+                      <circle cx="50" cy="38" r="1.4" />
+                    </g>
+                  </svg>
+                )}
                 <h3 className={styles.bestName}>{food.name}</h3>
                 <p className={styles.bestMeta}>
                   <span>{food.kcal}kcal</span>
                   <span aria-hidden="true">·</span>
-                  <span>찜 {food.votes.toLocaleString('ko-KR')}</span>
+                  <span>찜 {food.likes.toLocaleString('ko-KR')}</span>
                 </p>
               </Link>
             ))}
           </div>
 
           <div className={styles.bestDots}>
-            {BEST_FOODS.map((food, i) => (
+            {bestFoods.map((food, i) => (
               <button
-                key={food.rank}
+                key={food.slug}
                 type="button"
                 className={styles.bestDot}
                 aria-label={`${food.name}로 이동`}

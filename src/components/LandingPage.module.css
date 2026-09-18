@@ -622,8 +622,13 @@
 }
 
 .bestArt {
+  display: block;
   width: 100%;
   height: auto;
+  aspect-ratio: 100 / 60;
+  object-fit: cover;
+  border-radius: 14px;
+  background: var(--surface-2);
   filter: drop-shadow(0 8px 12px rgba(32, 32, 30, 0.18));
 }
 

@@ -1,13 +1,14 @@
+import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { BEST_FOODS } from '../data/bestFoods'
+import { FOOD_CATALOG, rankFoods } from '../data/bestFoods'
+import { fetchFoodLikes, likeFood } from '../api/engagement'
+import { fetchYoutubeVideos } from '../api/youtube'
 import styles from './FoodDetailPage.module.css'
+
+const LIKED_STORAGE_KEY = 'schoolmeals:likedFoods'
 
 const FOOD_DETAILS = {
   donkkaseu: {
-    videos: [
-      { title: '학교 급식 돈까스, 이 조합이 국룰이지', channel: '급식맛집 지호', duration: '7:20', views: '9.8만' },
-      { title: '돈까스 바삭하게 오래 먹는 법', channel: '바삭이', duration: '5:41', views: '6.3만' },
-    ],
     tips: [
       { title: '소스는 콕 찍어서 살짝만', body: '듬뿍 붓기보다 찍어 먹으면 튀김옷의 바삭함이 훨씬 오래가요.' },
       { title: '채소 반찬이랑 같이', body: '기름진 맛을 잡아주고 씹는 식감도 재밌어져요.' },
@@ -24,10 +25,6 @@ const FOOD_DETAILS = {
     },
   },
   tteokbokki: {
-    videos: [
-      { title: '매콤달콤 떡볶이 완식 브이로그', channel: '밥친구 소라', duration: '8:02', views: '11.2만' },
-      { title: '떡볶이엔 역시 튀김 조합이지', channel: '든든한 한끼', duration: '6:15', views: '7.7만' },
-    ],
     tips: [
       { title: '국물에 다른 반찬 찍어 먹기', body: '떡볶이 국물은 활용도 만점, 튀김이나 순대를 찍어보세요.' },
       { title: '치즈나 계란 추가하기', body: '매운맛이 부드러워지고 고소함이 더해져요.' },
@@ -43,10 +40,6 @@ const FOOD_DETAILS = {
     },
   },
   jeyukbokkeum: {
-    videos: [
-      { title: '제육볶음 밥도둑 조합 리뷰', channel: '급식맛집 지호', duration: '6:48', views: '8.5만' },
-      { title: '제육볶음 건강하게 먹는 법', channel: '균형이', duration: '5:30', views: '4.9만' },
-    ],
     tips: [
       { title: '밥이랑 크게 한 입', body: '고기와 밥을 함께 크게 떠먹으면 양념 맛이 확 살아나요.' },
       { title: '상추에 쌈 싸먹기', body: '쌈채소에 싸 먹으면 느끼함 없이 깔끔하게 즐길 수 있어요.' },
@@ -62,10 +55,6 @@ const FOOD_DETAILS = {
     },
   },
   japchae: {
-    videos: [
-      { title: '잡채 야채 골고루 먹기 챌린지', channel: '밥친구 소라', duration: '7:05', views: '5.4만' },
-      { title: '잡채 당면 쫄깃하게 삶는 법', channel: '급식맛집 지호', duration: '4:52', views: '6.1만' },
-    ],
     tips: [
       { title: '야채 골고루 함께 먹기', body: '당면만 건져 먹지 말고 채소도 같이 집어보세요.' },
       { title: '밥이랑 비벼 먹기', body: '간장 양념이 밥과 잘 어우러져 색다른 맛이 나요.' },
@@ -81,10 +70,6 @@ const FOOD_DETAILS = {
     },
   },
   chickennugget: {
-    videos: [
-      { title: '치킨너겟 바삭하게 튀기는 법', channel: '바삭이', duration: '5:18', views: '7.0만' },
-      { title: '너겟 소스 조합 추천 3가지', channel: '든든한 한끼', duration: '4:40', views: '5.6만' },
-    ],
     tips: [
       { title: '소스 두 가지로 즐기기', body: '케첩과 머스타드를 같이 두면 질리지 않고 오래 즐길 수 있어요.' },
       { title: '채소랑 같이 먹기', body: '튀김 사이사이 채소를 곁들이면 입안이 개운해져요.' },
@@ -100,10 +85,6 @@ const FOOD_DETAILS = {
     },
   },
   miyeokguk: {
-    videos: [
-      { title: '미역국 든든하게 먹는 법', channel: '균형이', duration: '6:02', views: '4.1만' },
-      { title: '미역국 국물까지 완샷!', channel: '든든한 한끼', duration: '5:55', views: '5.8만' },
-    ],
     tips: [
       { title: '밥은 말지 말고 곁들이기', body: '국에 밥을 말면 짜지기 쉬워요, 한 숟갈씩 곁들여보세요.' },
       { title: '김치랑 같이 먹기', body: '개운한 국물에 아삭한 김치가 잘 어울려요.' },
@@ -120,10 +101,78 @@ const FOOD_DETAILS = {
   },
 }
 
+function readLikedSlugs() {
+  try {
+    return JSON.parse(localStorage.getItem(LIKED_STORAGE_KEY) ?? '[]')
+  } catch {
+    return []
+  }
+}
+
 export default function FoodDetailPage() {
   const { slug } = useParams()
-  const food = BEST_FOODS.find((f) => f.slug === slug)
+  const food = FOOD_CATALOG.find((f) => f.slug === slug)
   const detail = FOOD_DETAILS[slug]
+
+  const [likes, setLikes] = useState(0)
+  const [rank, setRank] = useState(null)
+  const [liked, setLiked] = useState(() => readLikedSlugs().includes(slug))
+  const [videos, setVideos] = useState([])
+  const [videosLoading, setVideosLoading] = useState(true)
+
+  useEffect(() => {
+    let cancelled = false
+    fetchFoodLikes()
+      .then((rows) => {
+        if (cancelled) return
+        const entry = rankFoods(rows).find((f) => f.slug === slug)
+        setLikes(entry?.likes ?? 0)
+        setRank(entry?.rank ?? null)
+      })
+      .catch(() => {
+        // 찜 정보를 못 받아도 나머지 콘텐츠는 그대로 보여준다
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [slug])
+
+  useEffect(() => {
+    if (!food) return
+    let cancelled = false
+    setVideosLoading(true)
+    // 검색어당 서버가 1회만 유튜브를 호출하고, 이후에는 저장된 결과를 내려준다
+    fetchYoutubeVideos(`${food.name} 급식 먹방`, 2)
+      .then((rows) => {
+        if (!cancelled) setVideos(rows)
+      })
+      .catch(() => {
+        if (!cancelled) setVideos([])
+      })
+      .finally(() => {
+        if (!cancelled) setVideosLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [food])
+
+  function handleLike() {
+    if (liked) return
+    setLiked(true)
+    setLikes((n) => n + 1)
+    try {
+      localStorage.setItem(LIKED_STORAGE_KEY, JSON.stringify([...readLikedSlugs(), slug]))
+    } catch {
+      // localStorage를 쓸 수 없는 환경이면 조용히 무시
+    }
+    likeFood(slug)
+      .then((res) => setLikes(res.count))
+      .catch(() => {
+        setLiked(false)
+        setLikes((n) => Math.max(0, n - 1))
+      })
+  }
 
   if (!food || !detail) {
     return (
@@ -174,23 +223,45 @@ export default function FoodDetailPage() {
             </g>
           </svg>
           <div className={styles.heroBody}>
-            <span className={styles.heroRank}>이번 달 {food.rank}위</span>
+            {rank && <span className={styles.heroRank}>이번 달 {rank}위</span>}
             <h1 className={styles.heroName}>{food.name}</h1>
             <p className={styles.heroMeta}>
               <span>{food.kcal}kcal</span>
               <span aria-hidden="true">·</span>
-              <span>찜 {food.votes.toLocaleString('ko-KR')}</span>
+              <span>찜 {likes.toLocaleString('ko-KR')}</span>
             </p>
+            <button
+              type="button"
+              className={styles.likeBtn}
+              data-liked={liked ? 'true' : 'false'}
+              onClick={handleLike}
+              disabled={liked}
+            >
+              {liked ? '♥ 찜했어요' : '♡ 찜하기'}
+            </button>
           </div>
         </div>
 
         <section className={styles.section}>
           <p className={styles.eyebrow}>먹방 영상</p>
           <h2 className={styles.sectionTitle}>{food.name} 먹는 영상 보러가기</h2>
+          {videosLoading && <p className={styles.videoNote}>영상을 불러오는 중이에요...</p>}
+          {!videosLoading && videos.length === 0 && (
+            <p className={styles.videoNote}>아직 연결된 영상이 없어요.</p>
+          )}
           <div className={styles.videoList}>
-            {detail.videos.map((video) => (
-              <article key={video.title} className={styles.videoCard}>
+            {videos.map((video) => (
+              <a
+                key={video.videoId}
+                className={styles.videoCard}
+                href={video.url}
+                target="_blank"
+                rel="noreferrer"
+              >
                 <div className={styles.thumb} style={{ background: `linear-gradient(135deg, ${food.from}, ${food.to})` }}>
+                  {video.thumbnail && (
+                    <img className={styles.thumbImg} src={video.thumbnail} alt="" loading="lazy" />
+                  )}
                   <div className={styles.thumbPlay}>
                     <span>
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="#2a1a08">
@@ -198,16 +269,15 @@ export default function FoodDetailPage() {
                       </svg>
                     </span>
                   </div>
-                  <span className={styles.thumbDuration}>{video.duration}</span>
+                  {video.duration && <span className={styles.thumbDuration}>{video.duration}</span>}
                 </div>
                 <div className={styles.videoMeta}>
                   <h3>{video.title}</h3>
-                  <p>{video.channel} · 조회수 {video.views}</p>
+                  <p>{video.channelTitle} · 조회수 {video.views}</p>
                 </div>
-              </article>
+              </a>
             ))}
           </div>
-          <p className={styles.videoNote}>* 먹방 영상은 예시이며, 추후 실제 유튜브 영상으로 연결될 예정이에요.</p>
         </section>
 
         <section className={styles.section}>
