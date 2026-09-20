@@ -6,6 +6,8 @@
  *   POST /meals/menu-insights
  *   POST /meals/allergen-notes
  *   GET /project-intro
+ *   POST /schools/{officeCode}/{schoolCode}/meals/{mealDate}/like
+ *   GET /schools/top-liked?month=YYYY-MM
  */
 import { config } from '../config'
 
@@ -78,6 +80,27 @@ export async function fetchAllergenNotes({ officeCode, schoolCode, days }) {
     }),
   })
   if (!res.ok) throw new Error(`알레르기 보완 정보를 불러오지 못했어요 (${res.status})`)
+  return res.json()
+}
+
+/** 그 학교의 그 날짜 급식에 좋아요를 누릅니다. 중복 클릭 방지는 프론트가 localStorage로 처리합니다. */
+export async function likeSchoolMeal({ officeCode, schoolCode, mealDate }) {
+  const res = await fetch(`${config.apiUrl}/schools/${officeCode}/${schoolCode}/meals/${mealDate}/like`, {
+    method: 'POST',
+  })
+  if (!res.ok) throw new Error(`좋아요를 누르지 못했어요 (${res.status})`)
+  return res.json()
+}
+
+/**
+ * 이번 달(또는 지정한 달) 좋아요를 가장 많이 받은 학교 순위를 가져옵니다.
+ * 각 학교에는 그 학교가 이번 달 가장 많이 좋아요를 받은 날짜의 실제 급식(menuText/calorieInfo)이
+ * 함께 오므로, parseDishes/parseKcal로 그대로 파싱해 보여줄 수 있습니다.
+ */
+export async function fetchTopLikedSchools(month) {
+  const params = month ? `?month=${encodeURIComponent(month)}` : ''
+  const res = await fetch(`${config.apiUrl}/schools/top-liked${params}`)
+  if (!res.ok) throw new Error(`인기 학교 순위를 불러오지 못했어요 (${res.status})`)
   return res.json()
 }
 

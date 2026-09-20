@@ -252,12 +252,12 @@ export default function GamePage() {
           </svg>
           홈으로
         </Link>
-        <span className={styles.topbarTitle}>급식 게임</span>
+        <span className={styles.topbarTitle}>학교폭력 예방 게임</span>
       </header>
 
       {screen === 'menu' && (
         <div className={styles.sheet}>
-          <p className={styles.eyebrow}>급식 게임</p>
+          <p className={styles.eyebrow}>학교폭력 예방 게임</p>
           <h1 className={styles.title}>학교폭력, 얼마나 알고 있나요?</h1>
           <p className={styles.lede}>
             퀴즈를 풀면서 학교폭력이 무엇인지, 어떻게 대처해야 하는지 함께 알아봐요.

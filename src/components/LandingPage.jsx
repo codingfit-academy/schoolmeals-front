@@ -2,13 +2,20 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import MealTray from './MealTray'
 import { formatToday } from '../utils/formatToday'
-import { fetchSchools } from '../api/schoolmeals'
-import { fetchFoodLikes } from '../api/engagement'
+import { fetchSchools, fetchTopLikedSchools } from '../api/schoolmeals'
+import { parseDishes, parseKcal } from '../utils/parseMeal'
 import { useSchool } from '../context/SchoolContext'
-import { rankFoods } from '../data/bestFoods'
 import styles from './LandingPage.module.css'
 
 const REGIONS = ['서울', '경기']
+const TOP_SCHOOL_ARTS = [
+  { from: '#f3bc63', to: '#cf8a26' },
+  { from: '#a3c274', to: '#4f6b2e' },
+  { from: '#ff9466', to: '#a8321b' },
+  { from: '#8fb8d8', to: '#3a6690' },
+  { from: '#d59ad0', to: '#8a4a86' },
+  { from: '#f0d264', to: '#b98a1f' },
+]
 
 const QUICK_ACTIONS = [
   {
@@ -16,12 +23,6 @@ const QUICK_ACTIONS = [
     to: '/calendar',
     label: '알레르기 체크표',
     desc: '알레르기가 나오는 급식을 달력으로 한눈에',
-    icon: (
-      <>
-        <rect x="3" y="4" width="18" height="17" rx="2" />
-        <path d="M3 9h18M8 4v0M16 4v0M8 13h3M8 17h3M14 13h3M14 17h3" />
-      </>
-    ),
     artFrom: '#f3bc63',
     artTo: '#cf8a26',
     art: (
@@ -41,16 +42,8 @@ const QUICK_ACTIONS = [
   {
     key: 'game',
     to: '/game',
-    label: '급식 게임',
+    label: '학교폭력 예방 게임',
     desc: ' 재미있는 미니게임',
-    icon: (
-      <>
-        <rect x="2" y="7.5" width="20" height="9" rx="4.5" />
-        <path d="M7 10v4M5 12h4" />
-        <circle cx="16" cy="11" r="1" />
-        <circle cx="18.2" cy="13.5" r="1" />
-      </>
-    ),
     artFrom: '#ff9466',
     artTo: '#a8321b',
     art: (
@@ -76,14 +69,6 @@ const QUICK_ACTIONS = [
     to: '/vote',
     label: '메뉴 투표',
     desc: '다음 급식 뽑기',
-    big: true,
-    icon: (
-      <>
-        <path d="M12 3v11" />
-        <path d="M7.5 8.5L12 4l4.5 4.5" />
-        <rect x="3" y="14" width="18" height="7" rx="2" />
-      </>
-    ),
     artFrom: '#a3c274',
     artTo: '#4f6b2e',
     art: (
@@ -117,7 +102,7 @@ export default function LandingPage() {
   const bestScrollTimeoutRef = useRef(null)
   const bestSyncingRef = useRef(false)
   const [bestIndex, setBestIndex] = useState(0)
-  const [bestFoods, setBestFoods] = useState(() => rankFoods([]))
+  const [topSchools, setTopSchools] = useState([])
 
   useEffect(() => {
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -184,12 +169,29 @@ export default function LandingPage() {
 
   useEffect(() => {
     let cancelled = false
-    fetchFoodLikes()
-      .then((likes) => {
-        if (!cancelled) setBestFoods(rankFoods(likes))
+    fetchTopLikedSchools()
+      .then((data) => {
+        if (cancelled) return
+        const schoolsList = (data.schools ?? []).map((s, i) => {
+          const dishes = s.menuText ? parseDishes(s.menuText) : []
+          const kcal = s.calorieInfo ? parseKcal(s.calorieInfo) : null
+          const art = TOP_SCHOOL_ARTS[i % TOP_SCHOOL_ARTS.length]
+          return {
+            key: `${s.officeCode}-${s.schoolCode}`,
+            officeCode: s.officeCode,
+            schoolCode: s.schoolCode,
+            schoolName: s.schoolName,
+            totalLikes: s.totalLikes,
+            dishNames: dishes.map((d) => d.name),
+            kcal,
+            from: art.from,
+            to: art.to,
+          }
+        })
+        setTopSchools(schoolsList)
       })
       .catch(() => {
-        // 찜 정보를 못 받아도 카탈로그 기본 순서로 계속 보여준다
+        // 인기 학교 정보를 못 받아도 페이지의 다른 부분은 그대로 보여준다
       })
     return () => {
       cancelled = true
@@ -198,14 +200,15 @@ export default function LandingPage() {
 
   useEffect(() => {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    if (topSchools.length === 0) return
 
     const id = setInterval(() => {
       if (bestPausedRef.current) return
-      setBestIndex((i) => (i + 1) % bestFoods.length)
+      setBestIndex((i) => (i + 1) % topSchools.length)
     }, 3800)
 
     return () => clearInterval(id)
-  }, [bestFoods.length])
+  }, [topSchools.length])
 
   useEffect(() => {
     const track = bestTrackRef.current
@@ -249,6 +252,11 @@ export default function LandingPage() {
     bestPausedRef.current = false
   }
 
+  function goToSchoolMenu(s) {
+    setSchool({ officeCode: s.officeCode, schoolCode: s.schoolCode, name: s.schoolName })
+    navigate('/menu')
+  }
+
   return (
     <div className={styles.page}>
       <div className={styles.hero} ref={heroRef}>
@@ -268,7 +276,6 @@ export default function LandingPage() {
             </svg>
             <span>
               <span className={styles.dMain}>{formatToday()}</span>
-              <span className={styles.dSub}> · 점심 12:10</span>
             </span>
           </div>
 
@@ -284,7 +291,7 @@ export default function LandingPage() {
                 <path d="M12 21s-7-6.1-7-11a7 7 0 0 1 14 0c0 4.9-7 11-7 11z" />
                 <circle cx="12" cy="10" r="2.4" />
               </svg>
-              <span>{school?.name || '학교를 선택하세요'}</span>
+              <span>학교를 선택하세요</span>
               <svg className={styles.chev} width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
                 <path d="M6 9l6 6 6-6" />
               </svg>
@@ -365,6 +372,15 @@ export default function LandingPage() {
         </div>
 
         <div className={styles.heroActions}>
+          {school && (
+            <button type="button" className={styles.quickMenuBtn} onClick={() => navigate('/menu')}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 21s-7-6.1-7-11a7 7 0 0 1 14 0c0 4.9-7 11-7 11z" />
+                <circle cx="12" cy="10" r="2.4" />
+              </svg>
+              {school.name} 급식 메뉴
+            </button>
+          )}
           <a className={styles.scrollCue} href="#more">
             더 알아보기
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -381,19 +397,13 @@ export default function LandingPage() {
             {QUICK_ACTIONS.map((action) => {
               const Tag = action.to ? Link : 'button'
               const tagProps = action.to ? { to: action.to } : { type: 'button' }
-              const tileClass = action.big
-                ? `${styles.quickTile} ${styles.quickTileBig}`
-                : styles.quickTile
               return (
-                <Tag key={action.key} className={tileClass} {...tagProps}>
-                  <span className={styles.quickBody}>
-                    <span className={styles.quickIcon}>
-                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        {action.icon}
-                      </svg>
-                    </span>
-                    <span className={styles.quickLabel}>{action.label}</span>
-                    <span className={styles.quickDesc}>{action.desc}</span>
+                <Tag key={action.key} className={styles.quickTile} {...tagProps}>
+                  <span className={styles.quickFill} aria-hidden="true" />
+                  <span className={styles.quickArrow} aria-hidden="true">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M7 17L17 7M9 7h8v8" />
+                    </svg>
                   </span>
                   <svg className={styles.quickArt} viewBox="0 0 72 72" aria-hidden="true">
                     <defs>
@@ -405,67 +415,67 @@ export default function LandingPage() {
                     <rect x="4" y="4" width="64" height="64" rx="20" fill={`url(#quickArtGrad-${action.key})`} />
                     {action.art}
                   </svg>
+                  <span className={styles.quickLabel}>{action.label}</span>
+                  <span className={styles.quickDesc}>{action.desc}</span>
                 </Tag>
               )
             })}
           </div>
         </div>
 
-        <div
-          className={styles.bestSection}
-          onMouseEnter={pauseBest}
-          onMouseLeave={resumeBest}
-          onFocus={pauseBest}
-          onBlur={resumeBest}
-          onTouchStart={pauseBest}
-        >
-          <div className={styles.bestHead}>
-            <div>
-              <p className={styles.eyebrow}>이번 달 BEST</p>
-              <h2>친구들이 선택한 BEST 급식</h2>
+        {topSchools.length > 0 && (
+          <div
+            className={styles.bestSection}
+            onMouseEnter={pauseBest}
+            onMouseLeave={resumeBest}
+            onFocus={pauseBest}
+            onBlur={resumeBest}
+            onTouchStart={pauseBest}
+          >
+            <div className={styles.bestHead}>
+              <div>
+                <p className={styles.eyebrow}>이번 달 인기 급식</p>
+                <h2>이번달 가장 인기있는 급식 학교</h2>
+              </div>
+              <div className={styles.bestNav}>
+                <button
+                  type="button"
+                  aria-label="이전 학교"
+                  onClick={() => setBestIndex((i) => (i - 1 + topSchools.length) % topSchools.length)}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M15 6l-6 6 6 6" />
+                  </svg>
+                </button>
+                <button
+                  type="button"
+                  aria-label="다음 학교"
+                  onClick={() => setBestIndex((i) => (i + 1) % topSchools.length)}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M9 6l6 6-6 6" />
+                  </svg>
+                </button>
+              </div>
             </div>
-            <div className={styles.bestNav}>
-              <button
-                type="button"
-                aria-label="이전 메뉴"
-                onClick={() => setBestIndex((i) => (i - 1 + bestFoods.length) % bestFoods.length)}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M15 6l-6 6 6 6" />
-                </svg>
-              </button>
-              <button
-                type="button"
-                aria-label="다음 메뉴"
-                onClick={() => setBestIndex((i) => (i + 1) % bestFoods.length)}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M9 6l6 6-6 6" />
-                </svg>
-              </button>
-            </div>
-          </div>
 
-          <div className={styles.bestViewport} ref={bestTrackRef} onScroll={handleBestScroll}>
-            {bestFoods.map((food) => (
-              <Link key={food.slug} to={`/food/${food.slug}`} className={styles.bestCard}>
-                <span className={styles.bestRank}>{food.rank}위</span>
-                {food.image ? (
-                  <img
-                    className={styles.bestArt}
-                    src={food.image}
-                    alt={food.name}
-                    loading="lazy"
-                  />
-                ) : (
+            <div className={styles.bestViewport} ref={bestTrackRef} onScroll={handleBestScroll}>
+              {topSchools.map((s, i) => (
+                <button
+                  key={s.key}
+                  type="button"
+                  className={styles.bestCard}
+                  onClick={() => goToSchoolMenu(s)}
+                >
+                  <span className={styles.bestRank}>{i + 1}위</span>
                   <svg className={styles.bestArt} viewBox="0 0 100 60">
                     <defs>
-                      <linearGradient id={`bestGrad-${food.slug}`} x1="10%" y1="0%" x2="90%" y2="100%">
-                        <stop offset="0%" stopColor={food.from} />
-                        <stop offset="100%" stopColor={food.to} />
+                      <linearGradient id={`bestGrad-${s.key}`} x1="10%" y1="0%" x2="90%" y2="100%">
+                        <stop offset="0%" stopColor={s.from} />
+                        <stop offset="100%" stopColor={s.to} />
                       </linearGradient>
                     </defs>
-                    <rect x="5" y="8" width="90" height="44" rx="18" fill={`url(#bestGrad-${food.slug})`} />
+                    <rect x="5" y="8" width="90" height="44" rx="18" fill={`url(#bestGrad-${s.key})`} />
                     <ellipse cx="32" cy="20" rx="16" ry="7" fill="#ffffff" opacity="0.25" />
                     <g fill="#ffffff" opacity="0.35">
                       <circle cx="60" cy="30" r="1.6" />
@@ -473,30 +483,37 @@ export default function LandingPage() {
                       <circle cx="50" cy="38" r="1.4" />
                     </g>
                   </svg>
-                )}
-                <h3 className={styles.bestName}>{food.name}</h3>
-                <p className={styles.bestMeta}>
-                  <span>{food.kcal}kcal</span>
-                  <span aria-hidden="true">·</span>
-                  <span>찜 {food.likes.toLocaleString('ko-KR')}</span>
-                </p>
-              </Link>
-            ))}
-          </div>
+                  <h3 className={styles.bestName}>{s.schoolName}</h3>
+                  {s.dishNames.length > 0 && (
+                    <p className={styles.bestDishes}>{s.dishNames.slice(0, 3).join(', ')}</p>
+                  )}
+                  <p className={styles.bestMeta}>
+                    {s.kcal != null && (
+                      <>
+                        <span>{s.kcal}kcal</span>
+                        <span aria-hidden="true">·</span>
+                      </>
+                    )}
+                    <span>좋아요 {s.totalLikes.toLocaleString('ko-KR')}</span>
+                  </p>
+                </button>
+              ))}
+            </div>
 
-          <div className={styles.bestDots}>
-            {bestFoods.map((food, i) => (
-              <button
-                key={food.slug}
-                type="button"
-                className={styles.bestDot}
-                aria-label={`${food.name}로 이동`}
-                aria-current={i === bestIndex ? 'true' : 'false'}
-                onClick={() => setBestIndex(i)}
-              />
-            ))}
+            <div className={styles.bestDots}>
+              {topSchools.map((s, i) => (
+                <button
+                  key={s.key}
+                  type="button"
+                  className={styles.bestDot}
+                  aria-label={`${s.schoolName}로 이동`}
+                  aria-current={i === bestIndex ? 'true' : 'false'}
+                  onClick={() => setBestIndex(i)}
+                />
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </section>
     </div>
   )
