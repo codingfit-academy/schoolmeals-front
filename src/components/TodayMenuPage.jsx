@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { formatDate } from '../utils/formatToday'
 import { toYmd, monthRange, buildMonthShell } from '../utils/date'
 import { parseDishes, parseKcal, ALLERGEN_LABEL } from '../utils/parseMeal'
-import { fetchMeals, fetchMenuInsights, likeSchoolMeal } from '../api/schoolmeals'
+import { fetchMeals, fetchMenuInsights, fetchVideoEatingGuide, likeSchoolMeal } from '../api/schoolmeals'
 import { searchVideos, parseViewCount } from '../api/youtube'
 import { useSchool } from '../context/SchoolContext'
 import SchoolPicker from './SchoolPicker'
@@ -12,6 +12,9 @@ import styles from './TodayMenuPage.module.css'
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토']
 
 const LIKED_MEALS_KEY = 'schoolmeals:likedMeals'
+
+// 영양 밸런스 점수 링(원)의 둘레 — strokeDasharray로 점수만큼만 채우는 데 씁니다.
+const BALANCE_RING_LENGTH = 2 * Math.PI * 34
 
 function getLikedMealsSet() {
   try {
@@ -79,9 +82,20 @@ export default function TodayMenuPage() {
   const [insightsLoading, setInsightsLoading] = useState(false)
   const [insightsError, setInsightsError] = useState(null)
 
-  const [videos, setVideos] = useState([])
+  // 메뉴(밥·국·반찬)별 먹방 영상 — [{ dish, videos }] 형태이고 조회수 1위 메뉴가 맨 앞에 옵니다.
+  const [dishVideos, setDishVideos] = useState([])
   const [videoLoading, setVideoLoading] = useState(false)
   const [videoError, setVideoError] = useState(null)
+  const [slideIndex, setSlideIndex] = useState(0)
+  const slidePausedRef = useRef(false)
+
+  // 영상들을 AI가 읽고 정리한 '유튜버들이 가장 추천하는 식사법'
+  const [videoGuide, setVideoGuide] = useState(null)
+  const [guideLoading, setGuideLoading] = useState(false)
+  const [guideError, setGuideError] = useState(null)
+
+  // 인체 그림에서 선택된 건강 포인트 (같은 번호를 다시 누르면 꺼집니다)
+  const [activePart, setActivePart] = useState(null)
 
   const today = useMemo(() => new Date(), [])
   // 상단 "오늘의 급식" 영역이 보여주는 날짜. 기본은 오늘(주말이면 가장 가까운 평일)이고,
@@ -215,7 +229,6 @@ export default function TodayMenuPage() {
 
   const dishes = meal ? parseDishes(meal.DDISH_NM) : []
   const totalKcal = meal ? parseKcal(meal.CAL_INFO) : null
-  const mainDish = dishes[0]?.name ?? null
   const dishNamesKey = dishes.map((d) => d.name).join('|')
 
   // AI(Gemini)가 오늘 메뉴를 한 번에 분석합니다 — 인기 메뉴 / 먹는 팁(있을 때만) / 건강 포인트.
@@ -226,8 +239,11 @@ export default function TodayMenuPage() {
       return
     }
     let cancelled = false
+    // 이전 날짜의 분석 결과를 남겨두면 아래 영상 검색이 옛 검색어를 써버리므로 먼저 비웁니다.
+    setInsights(null)
     setInsightsLoading(true)
     setInsightsError(null)
+    setActivePart(null)
     fetchMenuInsights({
       officeCode: school.officeCode,
       schoolCode: school.schoolCode,
@@ -248,25 +264,54 @@ export default function TodayMenuPage() {
     }
   }, [school, displayYmd, dishNamesKey])
 
-  const favoriteDish = insights?.favorite ?? null
   const eatingTip = insights?.eatingTip ?? null
   const healthNotes = insights?.healthNotes ?? []
+  const balance = insights?.balance ?? null
+  const searchKeywords = insights?.searchKeywords ?? []
 
-  // AI가 고른 메뉴가 준비되면 그 메뉴로, 실패하면 첫 메뉴로 영상을 검색합니다.
-  const videoTopic = favoriteDish ?? (insightsError ? mainDish : null)
+  // 급식 표기('포크타코또띠아롤-')는 유튜브에서 잘 검색되지 않아, AI가 다듬어준 검색어('타코')로
+  // 찾습니다. 분석이 끝나기 전에 미리 검색하면 같은 메뉴를 두 번 검색해 유튜브 할당량이 낭비되므로
+  // 분석이 끝날 때까지(또는 실패할 때까지) 기다렸다가 한 번만 검색합니다.
+  const insightsSettled = insights !== null || insightsError !== null
+  const videoQueriesKey = useMemo(() => {
+    if (!dishNamesKey || !insightsSettled) return ''
+    const keywordByDish = new Map((insights?.searchKeywords ?? []).map((k) => [k.dish, k.keyword]))
+    return dishNamesKey
+      .split('|')
+      .map((dish) => `${dish}>${keywordByDish.get(dish) || dish}`)
+      .join('|')
+  }, [dishNamesKey, insightsSettled, insights])
 
-  // 먹방 영상 (YouTube) — 조회수가 가장 높은 영상을 메인으로 둡니다.
+  // 메뉴마다 먹방 영상을 찾습니다. 어떤 메뉴가 1위인지는 AI가 아니라 실제 유튜브 조회수로 정합니다.
+  // 검색어별로 서버에 캐시되어 같은 검색어는 유튜브 API를 다시 호출하지 않습니다.
   useEffect(() => {
-    if (!videoTopic) return
+    if (!videoQueriesKey) {
+      setDishVideos([])
+      return
+    }
     let cancelled = false
     setVideoLoading(true)
     setVideoError(null)
-    searchVideos(`${videoTopic} 급식 먹방`, 4)
-      .then((data) => {
-        if (!cancelled) {
-          const sorted = [...data].sort((a, b) => parseViewCount(b.views) - parseViewCount(a.views))
-          setVideos(sorted)
-        }
+    setSlideIndex(0)
+    setVideoGuide(null)
+    Promise.all(
+      videoQueriesKey.split('|').map((pair) => {
+        const [dish, query] = pair.split('>')
+        return searchVideos(`${query} 먹방`, 3)
+          .then((videos) => ({ dish, videos }))
+          .catch(() => ({ dish, videos: [] }))
+      }),
+    )
+      .then((groups) => {
+        if (cancelled) return
+        const ranked = groups
+          .map((group) => ({
+            dish: group.dish,
+            videos: [...group.videos].sort((a, b) => parseViewCount(b.views) - parseViewCount(a.views)),
+          }))
+          .filter((group) => group.videos.length > 0)
+          .sort((a, b) => parseViewCount(b.videos[0].views) - parseViewCount(a.videos[0].views))
+        setDishVideos(ranked)
       })
       .catch((err) => {
         if (!cancelled) setVideoError(err.message)
@@ -277,9 +322,52 @@ export default function TodayMenuPage() {
     return () => {
       cancelled = true
     }
-  }, [videoTopic])
+  }, [videoQueriesKey])
 
-  const [mainVideo, ...sideVideos] = videos
+  // 메뉴별 영상이 슬라이더처럼 계속 넘어갑니다 (마우스를 올리면 잠시 멈춥니다).
+  useEffect(() => {
+    if (dishVideos.length <= 1) return
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    const id = setInterval(() => {
+      if (slidePausedRef.current) return
+      setSlideIndex((i) => (i + 1) % dishVideos.length)
+    }, 5000)
+    return () => clearInterval(id)
+  }, [dishVideos.length])
+
+  const topDish = dishVideos[0] ?? null
+  const topVideo = topDish?.videos[0] ?? null
+
+  // 영상을 다 찾은 뒤에 그 영상들을 AI가 읽고 식사법을 정리합니다.
+  // (서버가 이미 캐시해 둔 영상 정보를 쓰므로 검색어만 보냅니다.)
+  // 학교×날짜 단위로 DB에 저장되어, 그 다음부터는 AI 호출 없이 저장된 값이 내려옵니다.
+  useEffect(() => {
+    if (!school || !videoQueriesKey || videoLoading || dishVideos.length === 0) return
+    let cancelled = false
+    setGuideLoading(true)
+    setGuideError(null)
+    fetchVideoEatingGuide({
+      officeCode: school.officeCode,
+      schoolCode: school.schoolCode,
+      mealDate: displayYmd,
+      queries: videoQueriesKey.split('|').map((pair) => {
+        const [dish, query] = pair.split('>')
+        return { dish, query }
+      }),
+    })
+      .then((data) => {
+        if (!cancelled) setVideoGuide(data)
+      })
+      .catch((err) => {
+        if (!cancelled) setGuideError(err.message)
+      })
+      .finally(() => {
+        if (!cancelled) setGuideLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [school, displayYmd, videoQueriesKey, videoLoading, dishVideos.length])
 
   // 달력별 급식표 — 선택한 달의 급식을 한 번에 불러와 날짜별로 매핑합니다.
   useEffect(() => {
@@ -442,85 +530,167 @@ export default function TodayMenuPage() {
         </div>
       )}
 
-      {mainDish && (
+      {dishes.length > 0 && (
         <section className={styles.section}>
           <p className={styles.eyebrow}>먹방 영상</p>
-          <h2 className={styles.sectionTitle}>급식 먹는 영상 보러가기</h2>
-
-          {insightsLoading && (
-            <p className={styles.videoNote}>AI가 메뉴 중 가장 좋아할 만한 메뉴를 고르고 있어요...</p>
-          )}
-          {!insightsLoading && videoTopic && (
-            <p className={styles.videoTopicNote}>
-              AI가 고른 인기 메뉴 · <b>{videoTopic}</b>
+          <h2 className={styles.sectionTitle}>오늘 메뉴마다 먹방 영상을 모았어요</h2>
+          {searchKeywords.length > 0 && (
+            <p className={styles.aiTag}>
+              <span>AI</span> 급식 표기를 유튜브에서 잘 찾히는 검색어로 다듬었어요
             </p>
           )}
 
-          {videoTopic && videoLoading && <p className={styles.videoNote}>영상을 불러오는 중이에요...</p>}
-          {videoTopic && !videoLoading && videoError && (
+          {insightsLoading && <p className={styles.videoNote}>AI가 검색어를 다듬고 있어요...</p>}
+          {videoLoading && <p className={styles.videoNote}>메뉴별로 먹방 영상을 찾고 있어요...</p>}
+          {!videoLoading && videoError && (
             <p className={styles.videoNote}>영상을 불러오지 못했어요. ({videoError})</p>
           )}
-          {videoTopic && !videoLoading && !videoError && videos.length === 0 && (
+          {!videoLoading && !videoError && dishVideos.length === 0 && (
             <p className={styles.videoNote}>관련 영상을 아직 찾지 못했어요.</p>
           )}
-          {videoTopic && !videoLoading && !videoError && mainVideo && (
-            <div className={styles.videoShowcase}>
-              <a
-                href={mainVideo.url}
-                target="_blank"
-                rel="noreferrer"
-                className={styles.videoMain}
-              >
-                <div
-                  className={styles.videoMainThumb}
-                  style={{ backgroundImage: `url(${mainVideo.thumbnail})` }}
-                >
-                  <div className={`${styles.thumbPlay} ${styles.thumbPlayBig}`}>
-                    <span>
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="#2a1a08">
-                        <path d="M6 4l14 8-14 8V4z" />
-                      </svg>
-                    </span>
-                  </div>
-                  {mainVideo.duration && <span className={styles.thumbDuration}>{mainVideo.duration}</span>}
-                </div>
-                <div className={styles.videoMainMeta}>
-                  <h3>{mainVideo.title}</h3>
-                  <p>{mainVideo.channelTitle}{mainVideo.views ? ` · 조회수 ${mainVideo.views}` : ''}</p>
-                </div>
-              </a>
 
-              {sideVideos.length > 0 && (
-                <div className={styles.videoSideList}>
-                  {sideVideos.map((video) => (
-                    <a
-                      key={video.videoId}
-                      href={video.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className={styles.videoCard}
-                    >
-                      <div
-                        className={styles.thumb}
-                        style={{ backgroundImage: `url(${video.thumbnail})` }}
-                      >
-                        <div className={styles.thumbPlay}>
-                          <span>
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="#2a1a08">
-                              <path d="M6 4l14 8-14 8V4z" />
-                            </svg>
-                          </span>
-                        </div>
-                        {video.duration && <span className={styles.thumbDuration}>{video.duration}</span>}
+          {!videoLoading && topDish && topVideo && (
+            <a className={styles.videoHero} href={topVideo.url} target="_blank" rel="noreferrer">
+              <div
+                className={styles.videoHeroThumb}
+                style={{ backgroundImage: `url(${topVideo.thumbnail})` }}
+              >
+                <span className={styles.videoHeroBadge}>조회수 1위 · {topDish.dish}</span>
+                <div className={`${styles.thumbPlay} ${styles.thumbPlayBig}`}>
+                  <span>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="#2a1a08">
+                      <path d="M6 4l14 8-14 8V4z" />
+                    </svg>
+                  </span>
+                </div>
+                {topVideo.duration && <span className={styles.thumbDuration}>{topVideo.duration}</span>}
+              </div>
+              <div className={styles.videoHeroMeta}>
+                <p className={styles.videoHeroDish}>{topDish.dish}</p>
+                <h3>{topVideo.title}</h3>
+                <p>{topVideo.channelTitle}{topVideo.views ? ` · 조회수 ${topVideo.views}` : ''}</p>
+              </div>
+            </a>
+          )}
+
+          {dishVideos.length > 0 && (
+            <div
+              className={styles.slider}
+              onMouseEnter={() => { slidePausedRef.current = true }}
+              onMouseLeave={() => { slidePausedRef.current = false }}
+              onTouchStart={() => { slidePausedRef.current = true }}
+            >
+              <div className={styles.sliderTabs}>
+                {dishVideos.map((group, i) => (
+                  <button
+                    key={group.dish}
+                    type="button"
+                    className={styles.sliderTab}
+                    data-active={i === slideIndex ? 'true' : 'false'}
+                    onClick={() => setSlideIndex(i)}
+                  >
+                    {group.dish}
+                  </button>
+                ))}
+              </div>
+
+              <div className={styles.sliderViewport}>
+                <div
+                  className={styles.sliderTrack}
+                  style={{ transform: `translateX(-${slideIndex * 100}%)` }}
+                >
+                  {dishVideos.map((group, i) => (
+                    <div key={group.dish} className={styles.sliderSlide} aria-hidden={i !== slideIndex}>
+                      <div className={styles.videoGrid}>
+                        {group.videos.map((video) => (
+                          <a
+                            key={video.videoId}
+                            href={video.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className={styles.videoCard}
+                            tabIndex={i === slideIndex ? 0 : -1}
+                          >
+                            <div
+                              className={styles.thumb}
+                              style={{ backgroundImage: `url(${video.thumbnail})` }}
+                            >
+                              <div className={styles.thumbPlay}>
+                                <span>
+                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="#2a1a08">
+                                    <path d="M6 4l14 8-14 8V4z" />
+                                  </svg>
+                                </span>
+                              </div>
+                              {video.duration && <span className={styles.thumbDuration}>{video.duration}</span>}
+                            </div>
+                            <div className={styles.videoMeta}>
+                              <h3>{video.title}</h3>
+                              <p>{video.channelTitle}{video.views ? ` · 조회수 ${video.views}` : ''}</p>
+                            </div>
+                          </a>
+                        ))}
                       </div>
-                      <div className={styles.videoMeta}>
-                        <h3>{video.title}</h3>
-                        <p>{video.channelTitle}{video.views ? ` · 조회수 ${video.views}` : ''}</p>
-                      </div>
-                    </a>
+                    </div>
                   ))}
                 </div>
-              )}
+              </div>
+
+              <div className={styles.sliderDots}>
+                {dishVideos.map((group, i) => (
+                  <button
+                    key={group.dish}
+                    type="button"
+                    className={styles.sliderDot}
+                    aria-label={`${group.dish} 영상 보기`}
+                    aria-current={i === slideIndex ? 'true' : 'false'}
+                    onClick={() => setSlideIndex(i)}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+        </section>
+      )}
+
+      {(guideLoading || guideError || videoGuide?.summary || videoGuide?.topMethod) && (
+        <section className={styles.section}>
+          <p className={styles.eyebrow}>유튜버들의 식사법</p>
+          <h2 className={styles.sectionTitle}>유튜버들이 가장 추천하는 식사법</h2>
+          <p className={styles.aiTag}>
+            <span>AI</span> 위 먹방 영상들의 제목과 설명을 AI가 읽고 정리했어요
+          </p>
+
+          {guideLoading && (
+            <p className={styles.videoNote}>영상들을 읽고 어떻게 먹는지 정리하고 있어요...</p>
+          )}
+          {!guideLoading && guideError && (
+            <p className={styles.videoNote}>식사법을 불러오지 못했어요. ({guideError})</p>
+          )}
+
+          {!guideLoading && videoGuide?.summary && (
+            <p className={styles.lede}>{videoGuide.summary}</p>
+          )}
+
+          {!guideLoading && videoGuide?.topMethod && (
+            <div className={styles.topMethodCard}>
+              <span className={styles.topMethodBadge}>영상에서 가장 많이 나온 방법</span>
+              <p className={styles.topMethodDish}>{videoGuide.topMethod.dish}</p>
+              <h3 className={styles.topMethodName}>{videoGuide.topMethod.method}</h3>
+              <p className={styles.topMethodHowTo}>{videoGuide.topMethod.howTo}</p>
+              <p className={styles.topMethodWhy}>{videoGuide.topMethod.why}</p>
+            </div>
+          )}
+
+          {!guideLoading && videoGuide?.methods?.length > 0 && (
+            <div className={styles.methodGrid}>
+              {videoGuide.methods.map((method, i) => (
+                <div key={i} className={styles.methodCard}>
+                  <p className={styles.methodDish}>{method.dish}</p>
+                  <h3 className={styles.methodName}>{method.method}</h3>
+                  <p className={styles.methodHowTo}>{method.howTo}</p>
+                </div>
+              ))}
             </div>
           )}
         </section>
@@ -547,11 +717,21 @@ export default function TodayMenuPage() {
         </div>
       )}
 
-      {(eatingTip || healthNotes.length > 0) && (
+      {school && meal && (insightsLoading || insightsError) && (
+        <div className={styles.section}>
+          <p className={styles.videoNote}>
+            {insightsLoading
+              ? 'AI가 오늘 메뉴를 분석하고 있어요...'
+              : `AI 메뉴 분석을 불러오지 못했어요. (${insightsError})`}
+          </p>
+        </div>
+      )}
+
+      {(eatingTip || healthNotes.length > 0 || balance) && (
         <section className={styles.section}>
           <div
             className={
-              eatingTip && healthNotes.length > 0
+              eatingTip && (healthNotes.length > 0 || balance)
                 ? styles.tipsHealthGrid
                 : `${styles.tipsHealthGrid} ${styles.tipsHealthGridSingle}`
             }
@@ -566,13 +746,62 @@ export default function TodayMenuPage() {
               </div>
             )}
 
-            {healthNotes.length > 0 && (
+            {(healthNotes.length > 0 || balance) && (
               <div className={styles.tipsHealthCol}>
                 <p className={styles.eyebrow}>건강 포인트</p>
                 <h2 className={styles.sectionTitle}>이 급식은 몸의 이런 곳에 도움이 돼요</h2>
 
+                {balance && (
+                  <div className={styles.balanceCard}>
+                    <svg className={styles.balanceRing} viewBox="0 0 84 84" aria-hidden="true">
+                      <circle className={styles.balanceRingTrack} cx="42" cy="42" r="34" />
+                      <circle
+                        className={styles.balanceRingValue}
+                        cx="42"
+                        cy="42"
+                        r="34"
+                        style={{
+                          strokeDasharray: BALANCE_RING_LENGTH,
+                          strokeDashoffset: BALANCE_RING_LENGTH * (1 - balance.score / 100),
+                        }}
+                      />
+                      <text className={styles.balanceRingText} x="42" y="42" textAnchor="middle" dy="0.35em">
+                        {balance.score}
+                      </text>
+                    </svg>
+                    <div className={styles.balanceBody}>
+                      <p className={styles.aiTag}>
+                        <span>AI</span> 오늘 급식 영양 밸런스 점수
+                      </p>
+                      <p className={styles.balanceSummary}>{balance.summary}</p>
+                      {balance.groups.length > 0 && (
+                        <ul className={styles.balanceGroups}>
+                          {balance.groups.map((group) => (
+                            <li key={group.group} data-level={group.level}>
+                              {group.group}
+                              <b>{group.level}</b>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {healthNotes.length > 0 && (
                 <div className={styles.healthShowcase}>
-                  <svg className={styles.bodyDiagram} viewBox="0 0 200 420" aria-hidden="true">
+                  <svg className={styles.bodyDiagram} viewBox="0 0 200 420">
+                    <defs>
+                      <linearGradient id="bodyFill" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" stopColor="var(--amber-100)" />
+                        <stop offset="100%" stopColor="var(--surface-2)" />
+                      </linearGradient>
+                      <radialGradient id="bodyGlow" cx="50%" cy="34%" r="50%">
+                        <stop offset="0%" stopColor="var(--amber-500)" stopOpacity="0.2" />
+                        <stop offset="100%" stopColor="var(--amber-500)" stopOpacity="0" />
+                      </radialGradient>
+                    </defs>
+                    <rect x="0" y="0" width="200" height="420" fill="url(#bodyGlow)" />
                     {/* 머리 */}
                     <ellipse className={styles.bodyShape} cx="100" cy="34" rx="23" ry="27" />
                     {/* 목 */}
@@ -615,27 +844,62 @@ export default function TodayMenuPage() {
                       const base = BODY_PART_POSITIONS[note.bodyPart] ?? DEFAULT_BODY_POS
                       const dupIndex = healthNotes.slice(0, i).filter((n) => n.bodyPart === note.bodyPart).length
                       const pos = { x: base.x + dupIndex * 14, y: base.y }
+                      const isActive = activePart === i
                       return (
-                        <g key={i} className={styles.bodyDot} transform={`translate(${pos.x} ${pos.y})`}>
-                          <circle r="11" />
+                        <g
+                          key={i}
+                          className={styles.bodyDot}
+                          data-active={isActive ? 'true' : 'false'}
+                          data-dim={activePart !== null && !isActive ? 'true' : 'false'}
+                          transform={`translate(${pos.x} ${pos.y})`}
+                          role="button"
+                          tabIndex={0}
+                          aria-label={`${note.bodyPart} 건강 포인트`}
+                          onClick={() => setActivePart(isActive ? null : i)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault()
+                              setActivePart(isActive ? null : i)
+                            }
+                          }}
+                        >
+                          <circle className={styles.bodyDotPulse} r="11" />
+                          <circle className={styles.bodyDotCore} r="11" />
                           <text textAnchor="middle" dy="0.32em">{i + 1}</text>
                         </g>
                       )
                     })}
                   </svg>
 
+                  {activePart !== null && healthNotes[activePart] ? (
+                    <div key={activePart} className={styles.bodyDetail}>
+                      <span className={styles.bodyDetailPart}>{healthNotes[activePart].bodyPart}</span>
+                      <p>{healthNotes[activePart].note}</p>
+                    </div>
+                  ) : (
+                    <p className={styles.bodyHint}>번호를 누르면 몸의 어디에 좋은지 자세히 보여줘요</p>
+                  )}
+
                   <ul className={styles.healthList}>
                     {healthNotes.map((note, i) => (
                       <li key={i}>
-                        <span className={styles.healthListNum}>{i + 1}</span>
-                        <div>
-                          <b>{note.bodyPart}</b>
-                          <p>{note.note}</p>
-                        </div>
+                        <button
+                          type="button"
+                          className={styles.healthItem}
+                          data-active={activePart === i ? 'true' : 'false'}
+                          onClick={() => setActivePart(activePart === i ? null : i)}
+                        >
+                          <span className={styles.healthListNum}>{i + 1}</span>
+                          <span className={styles.healthItemBody}>
+                            <b>{note.bodyPart}</b>
+                            <span>{note.note}</span>
+                          </span>
+                        </button>
                       </li>
                     ))}
                   </ul>
                 </div>
+                )}
               </div>
             )}
           </div>

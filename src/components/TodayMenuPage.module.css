@@ -66,17 +66,6 @@
   text-wrap: balance;
 }
 
-.videoTopicNote {
-  margin-top: 10px;
-  font-size: 13px;
-  color: var(--text-muted);
-}
-
-.videoTopicNote b {
-  color: var(--amber-600);
-  font-weight: 800;
-}
-
 /* ---- intro ---- */
 
 .introHead h1 {
@@ -392,67 +381,161 @@
   color: rgba(230, 230, 228, 0.6);
 }
 
-.videoShowcase {
+.videoHero {
   margin-top: 18px;
   display: grid;
-  grid-template-columns: 1.6fr 1fr;
-  gap: 20px;
-  align-items: start;
-}
-
-/* ---- main (largest, highest view count) video ---- */
-
-.videoMain {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+  grid-template-columns: 1.15fr 1fr;
+  gap: 18px;
+  align-items: center;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  padding: 14px;
   text-decoration: none;
   color: inherit;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
 }
 
-.videoMainThumb {
+.videoHero:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 18px 36px rgba(32, 32, 30, 0.14);
+}
+
+.videoHeroThumb {
   position: relative;
   width: 100%;
   aspect-ratio: 16 / 9;
-  border-radius: 18px;
+  border-radius: 16px;
   overflow: hidden;
   background-color: var(--border);
   background-size: cover;
   background-position: center;
-  transition: box-shadow 0.2s ease;
 }
 
-.videoMain:hover .videoMainThumb {
-  box-shadow: 0 18px 36px rgba(32, 32, 30, 0.18);
+.videoHeroBadge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 1;
+  background: var(--amber-500);
+  color: #2a1a08;
+  font-size: 11.5px;
+  font-weight: 800;
+  padding: 5px 11px;
+  border-radius: 999px;
 }
 
-.videoMainMeta h3 {
+.videoHeroDish {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--amber-600);
+  margin-bottom: 6px;
+}
+
+.videoHeroMeta h3 {
   font-size: 16px;
   font-weight: 800;
   color: var(--text);
   line-height: 1.4;
 }
 
-.videoMainMeta p {
-  margin-top: 5px;
+.videoHeroMeta p {
+  margin-top: 6px;
   font-size: 13px;
   color: var(--text-muted);
 }
 
-/* ---- side (smaller) videos ---- */
+/* ---- 메뉴별 영상 슬라이더 ---- */
 
-.videoSideList {
+.slider {
+  margin-top: 22px;
+}
+
+.sliderTabs {
   display: flex;
-  flex-direction: column;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 12px;
+  scrollbar-width: none;
+}
+
+.sliderTabs::-webkit-scrollbar {
+  display: none;
+}
+
+.sliderTab {
+  flex: none;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text-muted);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 7px 14px;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.sliderTab[data-active='true'] {
+  color: #2a1a08;
+  background: var(--amber-500);
+  border-color: var(--amber-500);
+}
+
+.sliderViewport {
+  overflow: hidden;
+}
+
+.sliderTrack {
+  display: flex;
+  transition: transform 0.6s cubic-bezier(.16, 1, .3, 1);
+}
+
+.sliderSlide {
+  flex: 0 0 100%;
+  min-width: 0;
+}
+
+.videoGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
   gap: 12px;
 }
 
+.sliderDots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 16px;
+}
+
+.sliderDot {
+  width: 7px;
+  height: 7px;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: var(--border);
+  cursor: pointer;
+  transition: background 0.2s ease, width 0.2s ease;
+}
+
+.sliderDot[aria-current='true'] {
+  background: var(--amber-500);
+  width: 20px;
+}
+
+/* ---- 영상 카드 (썸네일이 위, 제목이 아래인 세로형) ---- */
+
 .videoCard {
   display: flex;
-  gap: 12px;
+  flex-direction: column;
+  gap: 10px;
   background: var(--surface-2);
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-radius: 18px;
   padding: 10px;
   text-decoration: none;
   color: inherit;
@@ -466,10 +549,9 @@
 
 .thumb {
   position: relative;
-  flex: none;
-  width: 108px;
-  height: 76px;
-  border-radius: 11px;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 12px;
   overflow: hidden;
   background-color: var(--border);
   background-size: cover;
@@ -485,8 +567,8 @@
 }
 
 .thumbPlay span {
-  width: 30px;
-  height: 30px;
+  width: 34px;
+  height: 34px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.92);
   display: flex;
@@ -513,12 +595,10 @@
 }
 
 .videoMeta {
-  flex: 1;
-  min-width: 0;
   display: flex;
   flex-direction: column;
-  justify-content: center;
   gap: 4px;
+  padding: 0 4px 4px;
 }
 
 .videoMeta h3 {
@@ -544,7 +624,7 @@
 }
 
 @media (max-width: 760px) {
-  .videoShowcase {
+  .videoHero {
     grid-template-columns: 1fr;
   }
 }
@@ -588,6 +668,227 @@
   color: var(--text);
 }
 
+/* ---- 유튜버들이 가장 추천하는 식사법 ---- */
+
+.topMethodCard {
+  margin-top: 18px;
+  background: linear-gradient(135deg, var(--amber-100), var(--surface-2));
+  border: 1px solid var(--amber-500);
+  border-radius: 22px;
+  padding: 22px 24px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .topMethodCard {
+    background: linear-gradient(135deg, rgba(232, 163, 61, 0.14), var(--surface-2));
+  }
+}
+
+.topMethodBadge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 800;
+  color: #2a1a08;
+  background: var(--amber-500);
+  border-radius: 999px;
+  padding: 4px 12px;
+}
+
+.topMethodDish {
+  margin-top: 12px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: var(--amber-600);
+}
+
+.topMethodName {
+  margin-top: 4px;
+  font-size: clamp(18px, 2.6vw, 22px);
+  font-weight: 800;
+  color: var(--text);
+}
+
+.topMethodHowTo {
+  margin-top: 10px;
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--text);
+}
+
+.topMethodWhy {
+  margin-top: 8px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
+.methodGrid {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.methodCard {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 16px 18px;
+}
+
+.methodDish {
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: var(--amber-600);
+}
+
+.methodName {
+  margin-top: 4px;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.methodHowTo {
+  margin-top: 7px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
+/* ---- AI가 만든 내용임을 알려주는 태그 ---- */
+
+.aiTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.aiTag span {
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: #2a1a08;
+  background: var(--amber-500);
+  border-radius: 999px;
+  padding: 3px 8px;
+}
+
+/* ---- AI 영양 밸런스 점수 카드 ---- */
+
+.balanceCard {
+  margin-top: 18px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  background: linear-gradient(135deg, var(--amber-100), var(--surface-2));
+  border: 1px solid var(--amber-500);
+  border-radius: 20px;
+  padding: 16px 18px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .balanceCard {
+    background: linear-gradient(135deg, rgba(232, 163, 61, 0.14), var(--surface-2));
+  }
+}
+
+.balanceRing {
+  flex: none;
+  width: 84px;
+  height: 84px;
+}
+
+.balanceRingTrack {
+  fill: none;
+  stroke: var(--border);
+  stroke-width: 8;
+}
+
+.balanceRingValue {
+  fill: none;
+  stroke: var(--amber-500);
+  stroke-width: 8;
+  stroke-linecap: round;
+  transform: rotate(-90deg);
+  transform-origin: center;
+  transform-box: fill-box;
+  transition: stroke-dashoffset 0.8s cubic-bezier(.16, 1, .3, 1);
+}
+
+.balanceRingText {
+  fill: var(--text);
+  font-size: 24px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.balanceBody {
+  min-width: 0;
+}
+
+.balanceBody .aiTag {
+  margin-top: 0;
+}
+
+.balanceSummary {
+  margin-top: 6px;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--text);
+}
+
+.balanceGroups {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.balanceGroups li {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--text-muted);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 4px 10px;
+}
+
+.balanceGroups b {
+  font-weight: 800;
+}
+
+.balanceGroups li[data-level='충분'] b {
+  color: #4f7a3a;
+}
+
+.balanceGroups li[data-level='보통'] b {
+  color: var(--amber-600);
+}
+
+.balanceGroups li[data-level='부족'] b {
+  color: #b8452c;
+}
+
+@media (max-width: 560px) {
+  .balanceCard {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
 /* ---- 건강 포인트 (인바디 결과지 느낌의 인체 그림) ---- */
 
 .healthShowcase {
@@ -599,46 +900,160 @@
 
 .bodyDiagram {
   width: 100%;
-  max-width: 220px;
+  max-width: 236px;
   height: auto;
-  filter: drop-shadow(0 8px 14px rgba(32, 32, 30, 0.1));
+  overflow: visible;
+  filter: drop-shadow(0 12px 20px rgba(32, 32, 30, 0.12));
 }
 
 .bodyShape {
-  fill: var(--surface-2);
-  stroke: var(--border);
-  stroke-width: 2;
+  fill: url(#bodyFill);
+  stroke: var(--amber-500);
+  stroke-width: 1.6;
+  stroke-opacity: 0.45;
   stroke-linejoin: round;
 }
 
-.bodyDot circle {
+.bodyDot {
+  cursor: pointer;
+  transition: opacity 0.25s ease;
+}
+
+.bodyDot:focus {
+  outline: none;
+}
+
+.bodyDot:focus-visible .bodyDotCore {
+  stroke: var(--amber-600);
+  stroke-width: 4;
+}
+
+.bodyDot[data-dim='true'] {
+  opacity: 0.3;
+}
+
+.bodyDotCore {
   fill: var(--amber-500);
   stroke: var(--surface);
   stroke-width: 3;
+  transition: fill 0.25s ease, r 0.25s cubic-bezier(.16, 1, .3, 1);
+}
+
+.bodyDot:hover .bodyDotCore {
+  fill: var(--amber-600);
+}
+
+.bodyDot[data-active='true'] .bodyDotCore {
+  fill: var(--amber-600);
+  r: 15;
+}
+
+.bodyDotPulse {
+  fill: var(--amber-500);
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  pointer-events: none;
+}
+
+.bodyDot[data-active='true'] .bodyDotPulse {
+  animation: bodyDotPulse 1.8s ease-out infinite;
+}
+
+@keyframes bodyDotPulse {
+  0% { transform: scale(1); opacity: 0.5; }
+  70% { transform: scale(2.6); opacity: 0; }
+  100% { transform: scale(2.6); opacity: 0; }
 }
 
 .bodyDot text {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 800;
   fill: #2a1a08;
+  pointer-events: none;
+  user-select: none;
+}
+
+.bodyHint {
+  margin-top: 16px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.bodyDetail {
+  margin-top: 16px;
+  width: 100%;
+  max-width: 420px;
+  text-align: center;
+  background: linear-gradient(135deg, var(--amber-100), var(--surface-2));
+  border: 1px solid var(--amber-500);
+  border-radius: 16px;
+  padding: 14px 18px;
+  animation: bodyDetailIn 0.35s cubic-bezier(.16, 1, .3, 1);
+}
+
+@keyframes bodyDetailIn {
+  from { opacity: 0; transform: translateY(10px) scale(0.97); }
+  to { opacity: 1; transform: none; }
+}
+
+.bodyDetailPart {
+  display: inline-block;
+  font-size: 11.5px;
+  font-weight: 800;
+  color: #2a1a08;
+  background: var(--amber-500);
+  border-radius: 999px;
+  padding: 4px 12px;
+  margin-bottom: 8px;
+}
+
+.bodyDetail p {
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--text);
 }
 
 .healthList {
-  margin: 22px 0 0;
+  margin: 20px 0 0;
   padding: 0;
   width: 100%;
   max-width: 640px;
   list-style: none;
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 12px 20px;
+  gap: 6px 12px;
 }
 
-.healthList li {
+.healthItem {
+  width: 100%;
   display: flex;
   align-items: flex-start;
   gap: 10px;
   text-align: left;
+  font: inherit;
+  color: inherit;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 14px;
+  padding: 9px 11px;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.healthItem:hover {
+  background: var(--surface-2);
+}
+
+.healthItem[data-active='true'] {
+  background: var(--amber-100);
+  border-color: var(--amber-500);
+}
+
+@media (prefers-color-scheme: dark) {
+  .healthItem[data-active='true'] {
+    background: rgba(232, 163, 61, 0.16);
+  }
 }
 
 .healthListNum {
@@ -657,6 +1072,10 @@
   margin-top: 1px;
 }
 
+.healthItemBody {
+  min-width: 0;
+}
+
 .healthList b {
   display: block;
   font-size: 13.5px;
@@ -664,11 +1083,24 @@
   color: var(--text);
 }
 
-.healthList p {
+.healthItemBody span {
+  display: block;
   margin-top: 2px;
   font-size: 12.5px;
   color: var(--text-muted);
   line-height: 1.55;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sliderTrack {
+    transition: none;
+  }
+  .bodyDot[data-active='true'] .bodyDotPulse {
+    animation: none;
+  }
+  .bodyDetail {
+    animation: none;
+  }
 }
 
 @media (max-width: 760px) {

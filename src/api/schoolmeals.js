@@ -5,6 +5,7 @@
  *   GET /meals?atpt_ofcdc_sc_code=...&sd_schul_code=...&mlsv_ymd=... (또는 from/to)
  *   POST /meals/menu-insights
  *   POST /meals/allergen-notes
+ *   POST /meals/video-eating-guide
  *   GET /project-intro
  *   POST /schools/{officeCode}/{schoolCode}/meals/{mealDate}/like
  *   GET /schools/top-liked?month=YYYY-MM
@@ -80,6 +81,29 @@ export async function fetchAllergenNotes({ officeCode, schoolCode, days }) {
     }),
   })
   if (!res.ok) throw new Error(`알레르기 보완 정보를 불러오지 못했어요 (${res.status})`)
+  return res.json()
+}
+
+/**
+ * 그 날 메뉴로 찾은 유튜브 먹방 영상들을 AI(Gemini)가 읽고, 사람들이 실제로 어떻게 먹는지와
+ * '유튜버들이 가장 추천하는 식사법'을 정리해 받습니다.
+ * 영상 정보는 서버가 이미 캐시해 둔 것을 쓰므로, 어떤 검색어로 찾았는지(queries)만 보냅니다.
+ * 학교×날짜 단위로 서버에 캐시되어 처음 접속했을 때만 AI가 호출됩니다.
+ * queries: [{ dish, query }]
+ * 반환: { summary, topMethod: { dish, method, howTo, why } | null, methods: [...] }
+ */
+export async function fetchVideoEatingGuide({ officeCode, schoolCode, mealDate, queries }) {
+  const res = await fetch(`${config.apiUrl}/meals/video-eating-guide`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      atpt_ofcdc_sc_code: officeCode,
+      sd_schul_code: schoolCode,
+      mlsv_ymd: mealDate,
+      queries,
+    }),
+  })
+  if (!res.ok) throw new Error(`식사법을 불러오지 못했어요 (${res.status})`)
   return res.json()
 }
 
