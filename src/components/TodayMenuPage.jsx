@@ -13,6 +13,11 @@ const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토']
 
 const LIKED_MEALS_KEY = 'schoolmeals:likedMeals'
 
+/** 유튜브 검색어. 백엔드의 youtube_caches 키와 반드시 같아야 하므로 여기서만 만듭니다. */
+function buildVideoQuery(keyword) {
+  return `${keyword} 먹방`
+}
+
 // 영양 밸런스 점수 링(원)의 둘레 — strokeDasharray로 점수만큼만 채우는 데 씁니다.
 const BALANCE_RING_LENGTH = 2 * Math.PI * 34
 
@@ -297,7 +302,7 @@ export default function TodayMenuPage() {
     Promise.all(
       videoQueriesKey.split('|').map((pair) => {
         const [dish, query] = pair.split('>')
-        return searchVideos(`${query} 먹방`, 3)
+        return searchVideos(buildVideoQuery(query), 3)
           .then((videos) => ({ dish, videos }))
           .catch(() => ({ dish, videos: [] }))
       }),
@@ -350,9 +355,10 @@ export default function TodayMenuPage() {
       officeCode: school.officeCode,
       schoolCode: school.schoolCode,
       mealDate: displayYmd,
+      // query는 실제로 유튜브 검색에 쓴 문자열 그대로여야 서버가 캐시를 찾을 수 있습니다.
       queries: videoQueriesKey.split('|').map((pair) => {
-        const [dish, query] = pair.split('>')
-        return { dish, query }
+        const [dish, keyword] = pair.split('>')
+        return { dish, query: buildVideoQuery(keyword) }
       }),
     })
       .then((data) => {
@@ -512,20 +518,57 @@ export default function TodayMenuPage() {
 
       {school && meal && (
         <div className={styles.section}>
-          <Link to="/game" className={styles.violenceBanner}>
-            <span className={styles.violenceBannerIcon}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z" />
-                <path d="M9.5 12l1.8 1.8L15 10" />
-              </svg>
-            </span>
-            <span className={styles.violenceBannerText}>
-              <b>학교폭력, 얼마나 알고 있나요?</b>
-              <p>퀴즈를 풀면서 학교폭력이 무엇인지, 어떻게 대처해야 하는지 함께 알아봐요.</p>
-            </span>
-            <svg className={styles.violenceBannerArrow} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M9 6l6 6-6 6" />
+          <Link to="/game" className={styles.violenceBanner} aria-label="학교폭력 예방 게임 하러 가기">
+            {/* 배너 그림 전체가 하나의 이미지처럼 보이고, 어디를 눌러도 게임으로 이동합니다.
+                실제 사진을 쓰고 싶으면 public/images/ 에 파일을 넣고 이 svg를 <img>로 바꾸면 됩니다. */}
+            <svg className={styles.violenceArt} viewBox="0 0 1200 400" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+              <defs>
+                <linearGradient id="violenceSky" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#4d6fa8" />
+                  <stop offset="55%" stopColor="#3a5a8f" />
+                  <stop offset="100%" stopColor="#2b3f63" />
+                </linearGradient>
+                <linearGradient id="violenceGlow" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stopColor="#ffffff" stopOpacity="0.22" />
+                  <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
+                </linearGradient>
+              </defs>
+
+              <rect width="1200" height="400" fill="url(#violenceSky)" />
+              <circle cx="980" cy="90" r="190" fill="#ffffff" opacity="0.07" />
+              <circle cx="1090" cy="300" r="140" fill="#ffffff" opacity="0.05" />
+              <rect width="1200" height="200" fill="url(#violenceGlow)" />
+
+              {/* 손을 맞잡은 두 친구 */}
+              <g transform="translate(820 120)">
+                <circle cx="0" cy="40" r="34" fill="#f6d5b4" />
+                <path d="M-42 92 Q0 68 42 92 L46 210 L-46 210 Z" fill="#e8a33d" />
+                <circle cx="150" cy="40" r="34" fill="#f0c49c" />
+                <path d="M108 92 Q150 68 192 92 L196 210 L104 210 Z" fill="#f2f2f0" />
+                <path d="M40 150 Q75 128 110 150" stroke="#ffffff" strokeWidth="13" fill="none" strokeLinecap="round" />
+                <path d="M62 120 l13 -13 l13 13 l-13 13 z" fill="#ff8c8c" />
+              </g>
+
+              {/* 지켜주는 방패 */}
+              <g transform="translate(150 118) scale(1.5)">
+                <path d="M60 0 L112 22 V78 C112 112 88 136 60 148 C32 136 8 112 8 78 V22 Z" fill="#ffffff" opacity="0.95" />
+                <path d="M38 74 l16 16 l30 -34" stroke="#3a5a8f" strokeWidth="11" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+              </g>
             </svg>
+
+            <span className={styles.violenceOverlay}>
+              <span className={styles.violenceKicker}>학교폭력 예방 캠페인</span>
+              <b className={styles.violenceHeadline}>학교폭력, 얼마나 알고 있나요?</b>
+              <span className={styles.violenceSub}>
+                퀴즈를 풀면서 무엇이 학교폭력인지, 어떻게 대처해야 하는지 함께 알아봐요.
+              </span>
+              <span className={styles.violenceCta}>
+                게임하러 가기
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 6l6 6-6 6" />
+                </svg>
+              </span>
+            </span>
           </Link>
         </div>
       )}
@@ -722,7 +765,7 @@ export default function TodayMenuPage() {
           <p className={styles.videoNote}>
             {insightsLoading
               ? 'AI가 오늘 메뉴를 분석하고 있어요...'
-              : `AI 메뉴 분석을 불러오지 못했어요. (${insightsError})`}
+              : 'AI 분석은 지금 불러올 수 없어요. 급식과 먹방 영상은 그대로 볼 수 있어요.'}
           </p>
         </div>
       )}

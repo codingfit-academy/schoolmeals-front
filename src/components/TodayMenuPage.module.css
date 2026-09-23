@@ -270,65 +270,112 @@
   }
 }
 
-/* ---- 학교폭력 예방 배너 (알레르기 배너와 구분되게 파란 계열) ---- */
+/* ---- 학교폭력 예방 배너 (그림 전체가 하나의 이미지처럼 보이는 배너) ---- */
 
 .violenceBanner {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  background: linear-gradient(135deg, #dce8f5, var(--surface-2));
-  border: 1px solid #5b7fa6;
-  border-radius: 20px;
-  padding: 18px 22px;
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 1200 / 400;
+  max-height: 320px;
+  border-radius: 24px;
+  overflow: hidden;
   text-decoration: none;
   color: inherit;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 16px 34px rgba(32, 32, 30, 0.18);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
 }
 
 .violenceBanner:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 14px 28px rgba(32, 32, 30, 0.12);
+  transform: translateY(-3px);
+  box-shadow: 0 22px 44px rgba(32, 32, 30, 0.24);
 }
 
-.violenceBannerIcon {
-  flex: none;
-  width: 44px;
-  height: 44px;
-  border-radius: 14px;
-  background: #5b7fa6;
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.violenceBannerText {
-  flex: 1;
-  min-width: 0;
-}
-
-.violenceBannerText b {
+.violenceArt {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   display: block;
-  font-size: 15px;
+}
+
+/* 그림 위에 글씨가 항상 읽히도록 왼쪽을 어둡게 덮는다 */
+.violenceOverlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 8px;
+  padding: clamp(20px, 4vw, 44px);
+  background: linear-gradient(90deg, rgba(18, 26, 42, 0.86) 0%, rgba(18, 26, 42, 0.55) 52%, rgba(18, 26, 42, 0.12) 100%);
+}
+
+.violenceKicker {
+  font-size: 11.5px;
   font-weight: 800;
-  color: var(--text);
+  letter-spacing: 0.14em;
+  color: #2a1a08;
+  background: var(--amber-500);
+  border-radius: 999px;
+  padding: 5px 12px;
 }
 
-.violenceBannerText p {
-  margin-top: 3px;
-  font-size: 12.5px;
-  color: var(--text-muted);
-  line-height: 1.5;
+.violenceHeadline {
+  font-size: clamp(19px, 3vw, 30px);
+  font-weight: 800;
+  line-height: 1.3;
+  color: #ffffff;
+  text-wrap: balance;
 }
 
-.violenceBannerArrow {
-  flex: none;
-  color: #5b7fa6;
+.violenceSub {
+  max-width: 34ch;
+  font-size: clamp(12.5px, 1.5vw, 14.5px);
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.82);
 }
 
-@media (prefers-color-scheme: dark) {
+.violenceCta {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 6px;
+  font-size: 13px;
+  font-weight: 800;
+  color: #ffffff;
+  border-bottom: 2px solid var(--amber-500);
+  padding-bottom: 3px;
+}
+
+.violenceBanner:hover .violenceCta svg {
+  transform: translateX(3px);
+}
+
+.violenceCta svg {
+  transition: transform 0.2s ease;
+}
+
+@media (max-width: 560px) {
   .violenceBanner {
-    background: linear-gradient(135deg, rgba(91, 127, 166, 0.18), var(--surface-2));
+    aspect-ratio: 4 / 3;
+    max-height: 260px;
+  }
+  .violenceOverlay {
+    background: linear-gradient(180deg, rgba(18, 26, 42, 0.45) 0%, rgba(18, 26, 42, 0.88) 60%);
+    justify-content: flex-end;
+  }
+  .violenceSub {
+    max-width: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .violenceBanner,
+  .violenceCta svg {
+    transition: none;
   }
 }
 
