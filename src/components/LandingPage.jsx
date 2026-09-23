@@ -17,6 +17,105 @@ const TOP_SCHOOL_ARTS = [
   { from: '#f0d264', to: '#b98a1f' },
 ]
 
+// 첫 화면 가로 스크롤 스토리 — 과거부터 지금까지 급식이 어떻게 좋아졌는지 보여줍니다.
+// 연도는 '몇 년대' 수준으로만 적습니다 (정확한 수치를 단정하지 않기 위함).
+//
+// bg: 배경 사진 경로. public/images/story/ 에 파일을 넣고 여기에 경로만 적으면
+//     그 패널이 사진 배경으로 바뀝니다 (예: bg: '/images/story/1980-dosirak.jpg').
+//     비워두면 아래 bgTint 색 배경이 쓰이므로, 사진이 없어도 화면은 정상입니다.
+const STORY_PANELS = [
+  {
+    key: 'start',
+    era: '1980년대',
+    tag: '급식의 시작',
+    title: '도시락을 싸 오던 시절',
+    desc: '학교급식법이 만들어지면서 학교에서 밥을 주기 시작했어요. 아직은 일부 학교만, 반찬도 몇 가지뿐이었죠.',
+    bg: '/images/story/1980-dosirak.jpg',
+    bgTint: 'linear-gradient(140deg, #4a443c 0%, #2b2724 70%)',
+    from: '#b3aa9c',
+    to: '#6d6459',
+    art: (
+      <>
+        <rect x="14" y="26" width="72" height="48" rx="8" fill="#efe7d8" />
+        <rect x="14" y="26" width="72" height="10" rx="5" fill="#8c7a63" />
+        <rect x="22" y="44" width="28" height="22" rx="4" fill="#dcd0b8" />
+        <rect x="54" y="44" width="24" height="10" rx="3" fill="#c9b48f" />
+        <rect x="54" y="58" width="24" height="8" rx="3" fill="#c9b48f" />
+      </>
+    ),
+  },
+  {
+    key: 'spread',
+    era: '1990~2000년대',
+    tag: '전국으로',
+    title: '모든 학교에 급식실이 생겼어요',
+    desc: '초·중·고로 급식이 퍼지면서, 밥과 국에 반찬까지 갖춘 한 끼가 당연한 일이 되었어요.',
+    bg: '/images/story/2000-gupsiksil.jpg',
+    bgTint: 'linear-gradient(140deg, #6b4f2a 0%, #2e241a 70%)',
+    from: '#e0b877',
+    to: '#a87630',
+    art: (
+      <>
+        <rect x="10" y="30" width="80" height="44" rx="7" fill="#f6efdf" />
+        <rect x="16" y="36" width="26" height="32" rx="4" fill="#e4d6b6" />
+        <rect x="46" y="36" width="18" height="14" rx="4" fill="#e8a33d" />
+        <rect x="68" y="36" width="16" height="14" rx="4" fill="#cf8a26" />
+        <rect x="46" y="54" width="38" height="14" rx="4" fill="#e4d6b6" />
+        <circle cx="76" cy="26" r="9" fill="#f6efdf" />
+        <circle cx="76" cy="26" r="5" fill="#d8a45a" />
+      </>
+    ),
+  },
+  {
+    key: 'free',
+    era: '2010년대',
+    tag: '누구나 같은 한 끼',
+    title: '무상급식과 영양 선생님',
+    desc: '누구나 눈치 보지 않고 같은 밥을 먹게 됐어요. 영양 선생님이 한 끼의 영양을 직접 계산해 식단을 짜기 시작했고요.',
+    bg: '/images/story/2010-musang.jpg',
+    bgTint: 'linear-gradient(140deg, #3f5a2c 0%, #1f2a17 70%)',
+    from: '#a3c274',
+    to: '#4f6b2e',
+    art: (
+      <>
+        <rect x="8" y="28" width="84" height="46" rx="8" fill="#f4f6ec" />
+        <rect x="14" y="34" width="24" height="34" rx="4" fill="#dfe8cc" />
+        <rect x="42" y="34" width="22" height="16" rx="4" fill="#8fae5f" />
+        <rect x="68" y="34" width="18" height="16" rx="4" fill="#e8a33d" />
+        <rect x="42" y="54" width="44" height="14" rx="4" fill="#dfe8cc" />
+        <rect x="60" y="14" width="14" height="18" rx="3" fill="#ffffff" />
+        <path d="M63 22l2.4 2.4 5-5" stroke="#4f6b2e" strokeWidth="2.4" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+      </>
+    ),
+  },
+  {
+    key: 'now',
+    era: '2020년대',
+    tag: '지금의 급식',
+    title: '알레르기까지 챙기는 한 끼',
+    desc: '19가지 알레르기 표시, 매일 바뀌는 메뉴, 계산된 칼로리까지. 이제 급식은 그냥 밥이 아니라 잘 설계된 한 끼예요.',
+    bg: '/images/story/2020-now.jpg',
+    bgTint: 'linear-gradient(140deg, #7a3a1c 0%, #2a1a12 70%)',
+    from: '#f3bc63',
+    to: '#c1391f',
+    art: (
+      <>
+        <rect x="8" y="26" width="84" height="48" rx="9" fill="#fdf6e6" />
+        <rect x="14" y="32" width="24" height="36" rx="5" fill="#f0e2c2" />
+        <rect x="42" y="32" width="22" height="17" rx="5" fill="#d9533a" />
+        <rect x="68" y="32" width="18" height="17" rx="5" fill="#8fae5f" />
+        <rect x="42" y="53" width="44" height="15" rx="5" fill="#e8a33d" />
+        <circle cx="80" cy="20" r="11" fill="#c1391f" />
+        <path d="M80 15v6" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" />
+        <circle cx="80" cy="25" r="1.4" fill="#fff" />
+      </>
+    ),
+  },
+]
+
+// 마지막 '결론' 패널의 배경 사진 (식판 + 문구는 그대로 위에 올라갑니다)
+const STORY_FINALE_BG = '/images/story/2020-now2.jpg'
+
 const QUICK_ACTIONS = [
   {
     key: 'calendar',
@@ -97,6 +196,11 @@ export default function LandingPage() {
   const [schoolsLoading, setSchoolsLoading] = useState(false)
   const [schoolsError, setSchoolsError] = useState(null)
 
+  // 첫 화면 가로 스크롤 스토리 — 세로로 스크롤한 만큼 패널이 옆으로 밀립니다.
+  const storyRef = useRef(null)
+  const [storyProgress, setStoryProgress] = useState(0)
+  const [storyHorizontal, setStoryHorizontal] = useState(false)
+
   const bestTrackRef = useRef(null)
   const bestPausedRef = useRef(false)
   const bestScrollTimeoutRef = useRef(null)
@@ -124,6 +228,48 @@ export default function LandingPage() {
     return () => hero.removeEventListener('mousemove', handleMove)
   }, [])
 
+  // 좁은 화면이나 '모션 줄이기' 설정에서는 가로 스크롤 대신 위아래로 넘겨 보게 합니다.
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 761px) and (prefers-reduced-motion: no-preference)')
+    const apply = () => setStoryHorizontal(mq.matches)
+    apply()
+    mq.addEventListener('change', apply)
+    return () => mq.removeEventListener('change', apply)
+  }, [])
+
+  useEffect(() => {
+    if (!storyHorizontal) {
+      setStoryProgress(0)
+      return
+    }
+    const el = storyRef.current
+    if (!el) return
+
+    let frame = 0
+    function update() {
+      frame = 0
+      const total = el.offsetHeight - window.innerHeight
+      if (total <= 0) {
+        setStoryProgress(0)
+        return
+      }
+      const scrolled = Math.min(Math.max(-el.getBoundingClientRect().top, 0), total)
+      setStoryProgress(scrolled / total)
+    }
+    function onScroll() {
+      if (!frame) frame = requestAnimationFrame(update)
+    }
+
+    update()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    window.addEventListener('resize', onScroll)
+    return () => {
+      if (frame) cancelAnimationFrame(frame)
+      window.removeEventListener('scroll', onScroll)
+      window.removeEventListener('resize', onScroll)
+    }
+  }, [storyHorizontal])
+
   useEffect(() => {
     if (!filterOpen) return
 
@@ -138,7 +284,7 @@ export default function LandingPage() {
 
     document.addEventListener('click', handleClickOutside)
     document.addEventListener('keydown', handleKeyDown)
-    searchInputRef.current?.focus()
+    searchInputRef.current?.focus({ preventScroll: true })
 
     return () => {
       document.removeEventListener('click', handleClickOutside)
@@ -252,6 +398,15 @@ export default function LandingPage() {
     bestPausedRef.current = false
   }
 
+  // 헤더(학교 선택)는 페이지 맨 위에 있어서, 스토리를 스크롤한 뒤에는 화면 밖에 있습니다.
+  // 그래서 맨 위로 올려 헤더를 보여준 다음 드롭다운을 엽니다.
+  // stopPropagation: 이 클릭이 document 까지 올라가면 '바깥 클릭'으로 간주돼 방금 연 드롭다운이 다시 닫힙니다.
+  function openSchoolPicker(e) {
+    e.stopPropagation()
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+    setFilterOpen(true)
+  }
+
   function goToSchoolMenu(s) {
     setSchool({ officeCode: s.officeCode, schoolCode: s.schoolCode, name: s.schoolName })
     navigate('/menu')
@@ -260,14 +415,6 @@ export default function LandingPage() {
   return (
     <div className={styles.page}>
       <div className={styles.hero} ref={heroRef}>
-        <svg className={styles.grainSvg} aria-hidden="true">
-          <filter id="woodgrain">
-            <feTurbulence type="fractalNoise" baseFrequency="0.012 0.9" numOctaves="2" seed="7" result="n" />
-            <feColorMatrix in="n" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.5 0" />
-          </filter>
-          <rect width="100%" height="100%" filter="url(#woodgrain)" />
-        </svg>
-
         <header className={styles.topbar}>
           <div className={`${styles.dateChip} ${styles.glass}`}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -355,38 +502,119 @@ export default function LandingPage() {
           </div>
         </header>
 
-        <div className={styles.heroCopy}>
-          <p className={styles.eyebrow}>오늘의 급식</p>
-          <h1>
-            매점 음식 보다
-            <br />
-             <em>급식</em>이 더 맛있어요
-          </h1>
-          <p className={styles.lede}>
-            따끈한 밥 한 그릇에 국, 메인 반찬까지. 우리 학교 급식이 얼마나 알차게 차려지는지 지금 확인해보세요.
-          </p>
-        </div>
-
-        <div className={styles.trayStage}>
-          <MealTray />
-        </div>
-
-        <div className={styles.heroActions}>
-          {school && (
-            <button type="button" className={styles.quickMenuBtn} onClick={() => navigate('/menu')}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 21s-7-6.1-7-11a7 7 0 0 1 14 0c0 4.9-7 11-7 11z" />
-                <circle cx="12" cy="10" r="2.4" />
-              </svg>
-              {school.name} 급식 메뉴
-            </button>
-          )}
-          <a className={styles.scrollCue} href="#more">
-            더 알아보기
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M6 9l6 6 6-6" />
+        <div
+          className={styles.story}
+          ref={storyRef}
+          data-horizontal={storyHorizontal ? 'true' : 'false'}
+          style={storyHorizontal ? { height: `${(STORY_PANELS.length + 1) * 100}vh` } : undefined}
+        >
+          <div className={styles.storyViewport}>
+            <svg className={styles.grainSvg} aria-hidden="true">
+              <filter id="woodgrain">
+                <feTurbulence type="fractalNoise" baseFrequency="0.012 0.9" numOctaves="2" seed="7" result="n" />
+                <feColorMatrix in="n" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.5 0" />
+              </filter>
+              <rect width="100%" height="100%" filter="url(#woodgrain)" />
             </svg>
-          </a>
+
+            <div
+              className={styles.storyTrack}
+              style={
+                storyHorizontal
+                  ? { transform: `translate3d(-${storyProgress * STORY_PANELS.length * 100}%, 0, 0)` }
+                  : undefined
+              }
+            >
+              {STORY_PANELS.map((panel, i) => (
+                <section key={panel.key} className={styles.storyPanel} data-photo={panel.bg ? 'true' : 'false'}>
+                  <div
+                    className={styles.storyBg}
+                    style={panel.bg ? { backgroundImage: `url(${panel.bg})` } : { background: panel.bgTint }}
+                  />
+                  <div className={styles.storyPanelInner}>
+                    {!panel.bg && (
+                      <svg className={styles.storyArt} viewBox="0 0 100 100" aria-hidden="true">
+                        <defs>
+                          <linearGradient id={`storyGrad-${panel.key}`} x1="10%" y1="0%" x2="90%" y2="100%">
+                            <stop offset="0%" stopColor={panel.from} />
+                            <stop offset="100%" stopColor={panel.to} />
+                          </linearGradient>
+                        </defs>
+                        <rect x="2" y="2" width="96" height="96" rx="28" fill={`url(#storyGrad-${panel.key})`} />
+                        {panel.art}
+                      </svg>
+                    )}
+
+                    <div className={styles.storyCopy}>
+                      <p className={styles.storyEra}>{panel.era}</p>
+                      <p className={styles.storyTag}>{panel.tag}</p>
+                      <h2 className={styles.storyTitle}>{panel.title}</h2>
+                      <p className={styles.storyDesc}>{panel.desc}</p>
+                      {i === 0 && (
+                        <p className={styles.storyCue}>
+                          {storyHorizontal ? '스크롤하면 급식이 어떻게 바뀌었는지 이어져요' : '아래로 넘겨보세요'}
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M9 6l6 6-6 6" />
+                          </svg>
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </section>
+              ))}
+
+              <section className={styles.storyPanel}>
+                <div className={styles.storyBg} style={{ backgroundImage: `url(${STORY_FINALE_BG})` }} />
+                <div className={`${styles.storyPanelInner} ${styles.storyFinale}`}>
+                  <div className={styles.storyTray}>
+                    <MealTray />
+                  </div>
+                  <div className={styles.storyCopy}>
+                    <p className={styles.storyEra}>그래서 오늘</p>
+                    <h2 className={styles.storyFinaleTitle}>
+                      이제는 밖에서 사 먹는 것보다
+                      <br />
+                      <em>급식</em>이 더 맛있어요
+                    </h2>
+                    <p className={styles.storyDesc}>
+                      따끈한 밥 한 그릇에 국, 메인 반찬까지. 영양까지 계산해서 차려지는 한 끼를 지금 확인해보세요.
+                    </p>
+                    <a className={styles.storyMore} href="#more">
+                      더 알아보기
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M6 9l6 6 6-6" />
+                      </svg>
+                    </a>
+                  </div>
+                </div>
+              </section>
+            </div>
+
+            <div className={styles.storyFooter}>
+              {school ? (
+                <button type="button" className={styles.quickMenuBtn} onClick={() => navigate('/menu')}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 21s-7-6.1-7-11a7 7 0 0 1 14 0c0 4.9-7 11-7 11z" />
+                    <circle cx="12" cy="10" r="2.4" />
+                  </svg>
+                  {school.name} 급식 메뉴
+                </button>
+              ) : (
+                <button type="button" className={styles.quickMenuBtn} onClick={openSchoolPicker}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="11" cy="11" r="7" />
+                    <path d="M16.5 16.5L21 21" />
+                  </svg>
+                  학교 검색하기
+                </button>
+              )}
+              {storyHorizontal && (
+                <div className={styles.storyProgress}>
+                  <span style={{ transform: `scaleX(${storyProgress})` }} />
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 

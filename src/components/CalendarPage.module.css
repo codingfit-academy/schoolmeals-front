@@ -51,6 +51,8 @@
 }
 
 .topbarTitle {
+  /* 학교 이름은 오른쪽 SchoolPicker가 보여주므로, 제목은 가운데에서 자리만 차지한다 */
+  flex: 1;
   font-size: 13.5px;
   font-weight: 700;
   color: var(--text-muted);

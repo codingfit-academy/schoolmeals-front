@@ -151,7 +151,7 @@ export default function TodayMenuPage() {
     const url = buildShareUrl()
     const shareData = {
       title: '오늘의 급식',
-      text: school ? `${school.name}의 오늘 급식을 확인해보세요!` : '오늘의 급식을 확인해보세요!',
+      text: school ? `${school.name}의 급식 시대을 확인해보세요!` : '오늘의 급식을 확인해보세요!',
       url,
     }
     try {
@@ -432,7 +432,7 @@ export default function TodayMenuPage() {
           <div className={styles.introHeadActions}>
             {!isActualToday && (
               <button type="button" className={styles.backToTodayBtn} onClick={goToToday}>
-                오늘 급식으로 돌아가기
+                급식 시대으로 돌아가기
               </button>
             )}
             {school && (
@@ -771,7 +771,7 @@ export default function TodayMenuPage() {
                     </svg>
                     <div className={styles.balanceBody}>
                       <p className={styles.aiTag}>
-                        <span>AI</span> 오늘 급식 영양 밸런스 점수
+                        <span>AI</span> 급식 시대 영양 밸런스 점수
                       </p>
                       <p className={styles.balanceSummary}>{balance.summary}</p>
                       {balance.groups.length > 0 && (

@@ -28,7 +28,7 @@ export const TODAY_MENU = [
     slot: 'cellMain',
     name: '돈까스',
     kcal: 450,
-    blurb: '바삭한 튀김옷 속 부드러운 고기가 오늘 급식의 주인공이에요.',
+    blurb: '바삭한 튀김옷 속 부드러운 고기가 급식 시대의 주인공이에요.',
     health: '성장기에 필요한 단백질을 든든하게 채워주는 메뉴예요. 튀김이라 기름기가 있는 만큼, 채소 반찬과 함께 먹으면 균형을 맞출 수 있어요.',
     bodyRegions: ['leftArm', 'rightArm', 'leftLeg', 'rightLeg'],
     bodyLabel: '근육',

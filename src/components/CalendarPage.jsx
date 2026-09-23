@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useSchool } from '../context/SchoolContext'
+import SchoolPicker from './SchoolPicker'
 import { fetchMeals, fetchAllergenNotes } from '../api/schoolmeals'
 import { parseDishes, parseKcal, parseInfoList, ALLERGENS as ALLERGEN_DEFS } from '../utils/parseMeal'
 import { monthRange, toYmd, buildMonthShell } from '../utils/date'
@@ -185,13 +186,15 @@ export default function CalendarPage() {
           </svg>
           홈으로
         </Link>
-        <span className={styles.topbarTitle}>급식 달력표{school ? ` · ${school.name}` : ''}</span>
+        <span className={styles.topbarTitle}>급식 달력표</span>
+        <SchoolPicker />
       </header>
 
       <div className={styles.sheet}>
         {!school && (
           <p className={styles.noteText}>
-            아직 선택한 학교가 없어요. <Link to="/">홈으로 돌아가</Link> 학교를 먼저 선택해주세요.
+            아직 선택한 학교가 없어요. 오른쪽 위 <b>학교를 선택하세요</b> 버튼을 눌러 학교를 고르면
+            이 자리에 급식 달력과 알레르기 표시가 바로 나타나요.
           </p>
         )}
 
