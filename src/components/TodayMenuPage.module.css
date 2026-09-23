@@ -58,6 +58,18 @@
   border-top: 1px solid var(--border);
 }
 
+/* 배너처럼 구분선 없이 그림만 보여야 하는 섹션 — 위아래 구분선을 모두 없앱니다. */
+.sectionFlush,
+.section + .sectionFlush,
+.sectionFlush + .section {
+  border-top: none;
+}
+
+.sectionFlush {
+  padding-top: clamp(14px, 2vw, 22px);
+  padding-bottom: clamp(14px, 2vw, 22px);
+}
+
 .sectionTitle {
   margin-top: 6px;
   font-size: clamp(18px, 2.8vw, 22px);
@@ -276,8 +288,8 @@
   position: relative;
   display: block;
   width: 100%;
-  aspect-ratio: 1200 / 400;
-  max-height: 320px;
+  aspect-ratio: 1200 / 260;
+  max-height: 200px;
   border-radius: 24px;
   overflow: hidden;
   text-decoration: none;
@@ -360,8 +372,8 @@
 
 @media (max-width: 560px) {
   .violenceBanner {
-    aspect-ratio: 4 / 3;
-    max-height: 260px;
+    aspect-ratio: 3 / 2;
+    max-height: 200px;
   }
   .violenceOverlay {
     background: linear-gradient(180deg, rgba(18, 26, 42, 0.45) 0%, rgba(18, 26, 42, 0.88) 60%);

@@ -82,6 +82,7 @@ export default function TodayMenuPage() {
   const [shareCopied, setShareCopied] = useState(false)
   const [liked, setLiked] = useState(false)
   const [likeLoading, setLikeLoading] = useState(false)
+  const [likeError, setLikeError] = useState(null)
 
   const [insights, setInsights] = useState(null)
   const [insightsLoading, setInsightsLoading] = useState(false)
@@ -215,6 +216,7 @@ export default function TodayMenuPage() {
     if (!school || liked || likeLoading) return
     const key = `${school.officeCode}|${school.schoolCode}|${displayYmd}`
     setLikeLoading(true)
+    setLikeError(null)
     try {
       await likeSchoolMeal({
         officeCode: school.officeCode,
@@ -225,8 +227,9 @@ export default function TodayMenuPage() {
       set.add(key)
       saveLikedMealsSet(set)
       setLiked(true)
-    } catch {
-      // 좋아요 실패 시 별도 안내 없이 다시 눌러볼 수 있게 둡니다.
+    } catch (err) {
+      // 조용히 무시하면 버튼이 '안 눌리는' 것처럼 보이므로 이유를 보여줍니다.
+      setLikeError(err.message)
     } finally {
       setLikeLoading(false)
     }
@@ -512,12 +515,13 @@ export default function TodayMenuPage() {
               </svg>
               {liked ? '좋아요를 눌렀어요' : '이 급식 좋아요'}
             </button>
+            {likeError && <p className={styles.videoNote}>좋아요를 저장하지 못했어요. ({likeError})</p>}
           </>
         )}
       </section>
 
       {school && meal && (
-        <div className={styles.section}>
+        <div className={`${styles.section} ${styles.sectionFlush}`}>
           <Link to="/game" className={styles.violenceBanner} aria-label="학교폭력 예방 게임 하러 가기">
             {/* 배너 그림 전체가 하나의 이미지처럼 보이고, 어디를 눌러도 게임으로 이동합니다.
                 실제 사진을 쓰고 싶으면 public/images/ 에 파일을 넣고 이 svg를 <img>로 바꾸면 됩니다. */}
