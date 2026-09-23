@@ -13,6 +13,48 @@ const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토']
 
 const LIKED_MEALS_KEY = 'schoolmeals:likedMeals'
 
+// 서버는 학교×날짜로 AI 결과를 캐시하지만, 그래도 요청 한 번에 0.9초쯤 걸립니다.
+// /menu 는 급식 → AI 분석 → 영상 → 식사법이 순서대로 이어지는 구조라 네 번을 기다리면 느껴집니다.
+// 그래서 한 번 받은 결과를 브라우저에도 저장해 두고, 다시 들어오면 즉시 보여준 뒤
+// 뒤에서 조용히 최신 값을 받아 갱신합니다 (stale-while-revalidate).
+const INSIGHTS_CACHE_KEY = 'schoolmeals:insightsCache'
+const GUIDE_CACHE_KEY = 'schoolmeals:guideCache'
+const CACHE_LIMIT = 30
+
+function hashText(text) {
+  let hash = 0
+  for (let i = 0; i < text.length; i += 1) {
+    hash = (hash * 31 + text.charCodeAt(i)) | 0
+  }
+  return hash.toString(36)
+}
+
+function readPageCache(storeKey, id) {
+  try {
+    const raw = localStorage.getItem(storeKey)
+    if (!raw) return null
+    return JSON.parse(raw)[id] ?? null
+  } catch {
+    return null
+  }
+}
+
+function writePageCache(storeKey, id, value) {
+  try {
+    const raw = localStorage.getItem(storeKey)
+    const store = raw ? JSON.parse(raw) : {}
+    store[id] = value
+    // 오래된 항목부터 버려서 저장소가 무한히 커지지 않게 합니다.
+    const ids = Object.keys(store)
+    if (ids.length > CACHE_LIMIT) {
+      ids.slice(0, ids.length - CACHE_LIMIT).forEach((old) => delete store[old])
+    }
+    localStorage.setItem(storeKey, JSON.stringify(store))
+  } catch {
+    // localStorage를 쓸 수 없는 환경이면 조용히 무시 (캐시는 없어도 동작합니다)
+  }
+}
+
 /** 유튜브 검색어. 백엔드의 youtube_caches 키와 반드시 같아야 하므로 여기서만 만듭니다. */
 function buildVideoQuery(keyword) {
   return `${keyword} 먹방`
@@ -40,20 +82,21 @@ function saveLikedMealsSet(set) {
 
 // 건강 포인트 신체 부위 → 인체 그림 위 대략적인 좌표 (viewBox 0 0 200 420, 정밀할 필요 없음)
 const BODY_PART_POSITIONS = {
-  뇌: { x: 100, y: 28 },
-  눈: { x: 100, y: 38 },
-  목: { x: 100, y: 66 },
-  심장: { x: 86, y: 112 },
-  폐: { x: 114, y: 106 },
-  위장: { x: 100, y: 150 },
-  장: { x: 100, y: 176 },
-  근육: { x: 44, y: 140 },
-  뼈: { x: 100, y: 320 },
-  혈액: { x: 156, y: 160 },
-  피부: { x: 100, y: 90 },
-  면역력: { x: 100, y: 130 },
-  전신: { x: 100, y: 200 },
+  뇌: { x: 100, y: 30 },
+  눈: { x: 100, y: 44 },
+  목: { x: 100, y: 65 },
+  심장: { x: 89, y: 100 },
+  폐: { x: 112, y: 96 },
+  위장: { x: 100, y: 130 },
+  장: { x: 100, y: 160 },
+  근육: { x: 56, y: 118 },
+  뼈: { x: 85, y: 300 },
+  혈액: { x: 146, y: 150 },
+  피부: { x: 128, y: 78 },
+  면역력: { x: 100, y: 112 },
+  전신: { x: 100, y: 188 },
 }
+
 const DEFAULT_BODY_POS = { x: 100, y: 200 }
 
 /** 주말이면 가장 가까운 평일로 당겨줍니다 (토요일 → 금요일, 일요일 → 월요일). */
@@ -247,9 +290,13 @@ export default function TodayMenuPage() {
       return
     }
     let cancelled = false
-    // 이전 날짜의 분석 결과를 남겨두면 아래 영상 검색이 옛 검색어를 써버리므로 먼저 비웁니다.
-    setInsights(null)
-    setInsightsLoading(true)
+    const cacheId = `${school.officeCode}|${school.schoolCode}|${displayYmd}|${hashText(dishNamesKey)}`
+    const cached = readPageCache(INSIGHTS_CACHE_KEY, cacheId)
+
+    // 캐시가 있으면 기다리지 않고 바로 보여줍니다 — 아래 영상 검색도 곧장 시작됩니다.
+    // 이전 날짜의 분석을 남겨두면 영상 검색이 옛 검색어를 쓰므로, 캐시가 없으면 반드시 비웁니다.
+    setInsights(cached)
+    setInsightsLoading(!cached)
     setInsightsError(null)
     setActivePart(null)
     fetchMenuInsights({
@@ -259,10 +306,13 @@ export default function TodayMenuPage() {
       dishes: dishNamesKey.split('|'),
     })
       .then((data) => {
-        if (!cancelled) setInsights(data)
+        if (cancelled) return
+        setInsights(data)
+        writePageCache(INSIGHTS_CACHE_KEY, cacheId, data)
       })
       .catch((err) => {
-        if (!cancelled) setInsightsError(err.message)
+        // 캐시로 이미 보여주고 있다면 갱신 실패는 조용히 넘어갑니다.
+        if (!cancelled && !cached) setInsightsError(err.message)
       })
       .finally(() => {
         if (!cancelled) setInsightsLoading(false)
@@ -343,6 +393,11 @@ export default function TodayMenuPage() {
     return () => clearInterval(id)
   }, [dishVideos.length])
 
+  // 왼쪽 칼럼(식사법)을 보여줄지 판단 — 로딩·에러도 보여줘야 사용자가 상태를 알 수 있습니다.
+  const hasEatingGuide = Boolean(
+    guideLoading || guideError || videoGuide?.summary || videoGuide?.topMethod,
+  )
+
   const topDish = dishVideos[0] ?? null
   const topVideo = topDish?.videos[0] ?? null
 
@@ -352,7 +407,11 @@ export default function TodayMenuPage() {
   useEffect(() => {
     if (!school || !videoQueriesKey || videoLoading || dishVideos.length === 0) return
     let cancelled = false
-    setGuideLoading(true)
+    const cacheId = `${school.officeCode}|${school.schoolCode}|${displayYmd}|${hashText(videoQueriesKey)}`
+    const cached = readPageCache(GUIDE_CACHE_KEY, cacheId)
+
+    if (cached) setVideoGuide(cached)
+    setGuideLoading(!cached)
     setGuideError(null)
     fetchVideoEatingGuide({
       officeCode: school.officeCode,
@@ -365,10 +424,12 @@ export default function TodayMenuPage() {
       }),
     })
       .then((data) => {
-        if (!cancelled) setVideoGuide(data)
+        if (cancelled) return
+        setVideoGuide(data)
+        writePageCache(GUIDE_CACHE_KEY, cacheId, data)
       })
       .catch((err) => {
-        if (!cancelled) setGuideError(err.message)
+        if (!cancelled && !cached) setGuideError(err.message)
       })
       .finally(() => {
         if (!cancelled) setGuideLoading(false)
@@ -700,49 +761,6 @@ export default function TodayMenuPage() {
         </section>
       )}
 
-      {(guideLoading || guideError || videoGuide?.summary || videoGuide?.topMethod) && (
-        <section className={styles.section}>
-          <p className={styles.eyebrow}>유튜버들의 식사법</p>
-          <h2 className={styles.sectionTitle}>유튜버들이 가장 추천하는 식사법</h2>
-          <p className={styles.aiTag}>
-            <span>AI</span> 위 먹방 영상들의 제목과 설명을 AI가 읽고 정리했어요
-          </p>
-
-          {guideLoading && (
-            <p className={styles.videoNote}>영상들을 읽고 어떻게 먹는지 정리하고 있어요...</p>
-          )}
-          {!guideLoading && guideError && (
-            <p className={styles.videoNote}>식사법을 불러오지 못했어요. ({guideError})</p>
-          )}
-
-          {!guideLoading && videoGuide?.summary && (
-            <p className={styles.lede}>{videoGuide.summary}</p>
-          )}
-
-          {!guideLoading && videoGuide?.topMethod && (
-            <div className={styles.topMethodCard}>
-              <span className={styles.topMethodBadge}>영상에서 가장 많이 나온 방법</span>
-              <p className={styles.topMethodDish}>{videoGuide.topMethod.dish}</p>
-              <h3 className={styles.topMethodName}>{videoGuide.topMethod.method}</h3>
-              <p className={styles.topMethodHowTo}>{videoGuide.topMethod.howTo}</p>
-              <p className={styles.topMethodWhy}>{videoGuide.topMethod.why}</p>
-            </div>
-          )}
-
-          {!guideLoading && videoGuide?.methods?.length > 0 && (
-            <div className={styles.methodGrid}>
-              {videoGuide.methods.map((method, i) => (
-                <div key={i} className={styles.methodCard}>
-                  <p className={styles.methodDish}>{method.dish}</p>
-                  <h3 className={styles.methodName}>{method.method}</h3>
-                  <p className={styles.methodHowTo}>{method.howTo}</p>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-      )}
-
       {school && meal && (
         <div className={styles.section}>
           <Link to="/calendar" className={styles.allergyBanner}>
@@ -774,22 +792,69 @@ export default function TodayMenuPage() {
         </div>
       )}
 
-      {(eatingTip || healthNotes.length > 0 || balance) && (
+      {(hasEatingGuide || eatingTip || healthNotes.length > 0 || balance) && (
         <section className={styles.section}>
           <div
             className={
-              eatingTip && (healthNotes.length > 0 || balance)
+              (hasEatingGuide || eatingTip) && (healthNotes.length > 0 || balance)
                 ? styles.tipsHealthGrid
                 : `${styles.tipsHealthGrid} ${styles.tipsHealthGridSingle}`
             }
           >
-            {eatingTip && (
+            {(hasEatingGuide || eatingTip) && (
               <div className={styles.tipsHealthCol}>
-                <p className={styles.eyebrow}>맛있게 먹는 방법</p>
-                <h2 className={styles.sectionTitle}>{eatingTip.dish}, 이렇게 먹으면 더 맛있어요</h2>
-                <div className={styles.eatingTipCard}>
-                  <p>{eatingTip.tip}</p>
-                </div>
+                {hasEatingGuide && (
+                  <div className={styles.tipsBlock}>
+                    <p className={styles.eyebrow}>유튜버들의 식사법</p>
+                    <h2 className={styles.sectionTitle}>유튜버들이 가장 추천하는 식사법</h2>
+                    <p className={styles.aiTag}>
+                      <span>AI</span> 먹방 영상들의 제목과 설명을 AI가 읽고 정리했어요
+                    </p>
+
+                    {guideLoading && (
+                      <p className={styles.videoNote}>영상들을 읽고 어떻게 먹는지 정리하고 있어요...</p>
+                    )}
+                    {!guideLoading && guideError && (
+                      <p className={styles.videoNote}>식사법을 불러오지 못했어요. ({guideError})</p>
+                    )}
+
+                    {!guideLoading && videoGuide?.summary && (
+                      <p className={styles.lede}>{videoGuide.summary}</p>
+                    )}
+
+                    {!guideLoading && videoGuide?.topMethod && (
+                      <div className={styles.topMethodCard}>
+                        <span className={styles.topMethodBadge}>영상에서 가장 많이 나온 방법</span>
+                        <p className={styles.topMethodDish}>{videoGuide.topMethod.dish}</p>
+                        <h3 className={styles.topMethodName}>{videoGuide.topMethod.method}</h3>
+                        <p className={styles.topMethodHowTo}>{videoGuide.topMethod.howTo}</p>
+                        <p className={styles.topMethodWhy}>{videoGuide.topMethod.why}</p>
+                      </div>
+                    )}
+
+                    {!guideLoading && videoGuide?.methods?.length > 0 && (
+                      <div className={styles.methodGrid}>
+                        {videoGuide.methods.map((method, i) => (
+                          <div key={i} className={styles.methodCard}>
+                            <p className={styles.methodDish}>{method.dish}</p>
+                            <h3 className={styles.methodName}>{method.method}</h3>
+                            <p className={styles.methodHowTo}>{method.howTo}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {eatingTip && (
+                  <div className={styles.tipsBlock}>
+                    <p className={styles.eyebrow}>맛있게 먹는 방법</p>
+                    <h2 className={styles.sectionTitle}>{eatingTip.dish}, 이렇게 먹으면 더 맛있어요</h2>
+                    <div className={styles.eatingTipCard}>
+                      <p>{eatingTip.tip}</p>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -850,42 +915,44 @@ export default function TodayMenuPage() {
                     </defs>
                     <rect x="0" y="0" width="200" height="420" fill="url(#bodyGlow)" />
                     {/* 머리 */}
-                    <ellipse className={styles.bodyShape} cx="100" cy="34" rx="23" ry="27" />
+                    <ellipse className={styles.bodyShape} cx="100" cy="38" rx="20" ry="24" />
                     {/* 목 */}
-                    <path className={styles.bodyShape} d="M85 56 L85 74 Q100 83 115 74 L115 56 Z" />
-                    {/* 오른팔 */}
+                    <rect className={styles.bodyShape} x="92" y="56" width="16" height="18" rx="8" />
+
+                    {/* 몸통 — 어깨가 넓고 허리가 잘록하며 골반에서 다시 벌어집니다 */}
                     <path
                       className={styles.bodyShape}
-                      d="M66 96 C50 102 40 118 37 142 C34 168 35 196 40 220 C42 232 47 240 54 242
-                         C60 240 62 233 60 224 C56 200 55 175 58 150 C60 130 68 112 74 100 Z"
+                      d="M100 70 C87 70 74 73 68 80 C64 90 68 106 74 124 C77 134 77 144 76 154
+                         C74 168 72 180 72 190 L128 190 C128 180 126 168 124 154 C123 144 123 134 126 124
+                         C132 106 136 90 132 80 C126 73 113 70 100 70 Z"
                     />
-                    {/* 왼팔 */}
-                    <path
-                      className={styles.bodyShape}
-                      d="M134 96 C150 102 160 118 163 142 C166 168 165 196 160 220 C158 232 153 240 146 242
-                         C140 240 138 233 140 224 C144 200 145 175 142 150 C140 130 132 112 126 100 Z"
-                    />
-                    {/* 몸통 */}
-                    <path
-                      className={styles.bodyShape}
-                      d="M60 98 C60 86 72 80 86 78 L114 78 C128 80 140 86 140 98 C143 125 141 155 133 182
-                         C138 192 137 205 130 214 L70 214 C63 205 62 192 67 182 C59 155 57 125 60 98 Z"
-                    />
-                    {/* 오른다리 */}
-                    <path
-                      className={styles.bodyShape}
-                      d="M70 212 C64 240 62 270 64 300 C66 330 68 360 72 388 C73 396 78 402 86 402
-                         C92 402 94 396 93 388 C90 360 88 330 89 300 C90 270 92 242 96 214 Z"
-                    />
-                    {/* 왼다리 */}
-                    <path
-                      className={styles.bodyShape}
-                      d="M130 212 C136 240 138 270 136 300 C134 330 132 360 128 388 C127 396 122 402 114 402
-                         C108 402 106 396 107 388 C110 360 112 330 111 300 C110 270 108 242 104 214 Z"
-                    />
-                    {/* 발 */}
-                    <ellipse className={styles.bodyShape} cx="90" cy="406" rx="14" ry="7" />
-                    <ellipse className={styles.bodyShape} cx="110" cy="406" rx="14" ry="7" />
+                    {/* 어깨 관절 */}
+                    <circle className={styles.bodyShape} cx="68" cy="86" r="12" />
+                    <circle className={styles.bodyShape} cx="132" cy="86" r="12" />
+
+                    {/* 오른팔(화면 왼쪽) — 위팔 / 팔꿈치 / 아래팔 / 손 */}
+                    <rect className={styles.bodyShape} x="48" y="84" width="18" height="64" rx="9" transform="rotate(6 57 116)" />
+                    <circle className={styles.bodyShape} cx="55" cy="146" r="9" />
+                    <rect className={styles.bodyShape} x="47" y="144" width="16" height="58" rx="8" transform="rotate(-3 55 173)" />
+                    <ellipse className={styles.bodyShape} cx="54" cy="207" rx="9" ry="11" />
+
+                    {/* 왼팔(화면 오른쪽) */}
+                    <rect className={styles.bodyShape} x="134" y="84" width="18" height="64" rx="9" transform="rotate(-6 143 116)" />
+                    <circle className={styles.bodyShape} cx="145" cy="146" r="9" />
+                    <rect className={styles.bodyShape} x="137" y="144" width="16" height="58" rx="8" transform="rotate(3 145 173)" />
+                    <ellipse className={styles.bodyShape} cx="146" cy="207" rx="9" ry="11" />
+
+                    {/* 오른다리(화면 왼쪽) — 허벅지 / 무릎 / 종아리 / 발 */}
+                    <rect className={styles.bodyShape} x="74" y="186" width="24" height="94" rx="12" transform="rotate(2 86 233)" />
+                    <circle className={styles.bodyShape} cx="85" cy="284" r="12" />
+                    <rect className={styles.bodyShape} x="75" y="282" width="21" height="88" rx="10" transform="rotate(-1 85 326)" />
+                    <ellipse className={styles.bodyShape} cx="84" cy="376" rx="15" ry="9" />
+
+                    {/* 왼다리(화면 오른쪽) */}
+                    <rect className={styles.bodyShape} x="102" y="186" width="24" height="94" rx="12" transform="rotate(-2 114 233)" />
+                    <circle className={styles.bodyShape} cx="115" cy="284" r="12" />
+                    <rect className={styles.bodyShape} x="104" y="282" width="21" height="88" rx="10" transform="rotate(1 115 326)" />
+                    <ellipse className={styles.bodyShape} cx="116" cy="376" rx="15" ry="9" />
 
                     {healthNotes.map((note, i) => {
                       const base = BODY_PART_POSITIONS[note.bodyPart] ?? DEFAULT_BODY_POS

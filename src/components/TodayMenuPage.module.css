@@ -701,6 +701,13 @@
   grid-template-columns: 1fr;
 }
 
+/* 왼쪽 칼럼 안에서 '유튜버들의 식사법'과 '맛있게 먹는 방법'을 나누는 간격 */
+.tipsBlock + .tipsBlock {
+  margin-top: clamp(26px, 4vw, 40px);
+  padding-top: clamp(22px, 3vw, 32px);
+  border-top: 1px solid var(--border);
+}
+
 .tipsHealthCol {
   min-width: 0;
 }
