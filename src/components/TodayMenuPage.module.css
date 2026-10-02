@@ -1324,3 +1324,89 @@
     font-size: 9.5px;
   }
 }
+
+/* ---------------- 모바일 보정 ---------------- */
+
+/* grid 자식은 기본 min-width:auto 라 긴 글자(메뉴명 등)가 칸을 밀어 화면이 옆으로 삐져나옵니다 */
+.page {
+  overflow-x: clip;
+}
+
+.tipsHealthGrid,
+.tipsHealthCol,
+.videoHero,
+.methodGrid {
+  min-width: 0;
+}
+
+.tipsHealthGrid {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.tipsHealthGridSingle {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.menuChip,
+.methodCard,
+.topMethodCard,
+.eatingTipCard,
+.balanceCard {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 760px) {
+  .tipsHealthGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .topbar {
+    padding: 14px 16px;
+    gap: 10px;
+  }
+
+  .section {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .videoGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .methodGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .topMethodCard,
+  .balanceCard {
+    padding: 16px;
+  }
+
+  /* 모바일 달력: 주말은 급식이 없으므로 월~금 5칸만 보여 줍니다 */
+  .calWeekHeader,
+  .calGrid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+
+  .calWeekHeaderCell[data-weekend='true'],
+  .calCell[data-weekend='true'],
+  .calCellEmpty[data-weekend='true'] {
+    display: none;
+  }
+
+  .calGrid {
+    gap: 5px;
+  }
+
+  .calCell {
+    min-height: 74px;
+    padding: 6px 5px;
+  }
+
+  .calCellDishItem {
+    font-size: 9.5px;
+    line-height: 1.3;
+  }
+}

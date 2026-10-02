@@ -546,38 +546,58 @@
   transition: transform 0.12s linear;
 }
 
-/* ---- 좁은 화면 / 모션 줄이기: 가로 대신 위아래로 ---- */
+/* ---- 좁은 화면 / 모션 줄이기: 손가락으로 넘기는 카루셀 ---- */
 
 .story[data-horizontal='false'] .storyViewport {
-  position: static;
-  height: auto;
-  overflow: visible;
+  position: relative;
+  height: 100svh;
+  height: 100vh;
+  overflow: hidden;
   display: block;
 }
 
 .story[data-horizontal='false'] .storyTrack {
-  flex-direction: column;
-  height: auto;
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  height: 100%;
   transform: none;
+  transition: none;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.story[data-horizontal='false'] .storyTrack::-webkit-scrollbar {
+  display: none;
 }
 
 .story[data-horizontal='false'] .storyPanel {
-  flex: none;
-  height: auto;
-  min-height: 92svh;
-  min-height: 92vh;
-  padding: 56px clamp(20px, 7vw, 96px);
+  flex: 0 0 100%;
+  height: 100%;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+  padding: 76px 22px 120px;
+  overflow-y: auto;
 }
 
 .story[data-horizontal='false'] .storyPanelInner,
 .story[data-horizontal='false'] .storyFinale {
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
   text-align: center;
   justify-items: center;
+  gap: 18px;
 }
 
 .story[data-horizontal='false'] .storyArt {
-  max-width: 170px;
+  max-width: 120px;
+}
+
+.story[data-horizontal='false'] .storyEra {
+  font-size: 34px;
 }
 
 .story[data-horizontal='false'] .storyDesc {
@@ -585,10 +605,30 @@
   margin-right: auto;
 }
 
-.story[data-horizontal='false'] .storyFooter {
-  position: sticky;
-  bottom: 0;
-  padding-bottom: 16px;
+.story[data-horizontal='false'] .storyTray {
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.storyDots {
+  display: flex;
+  gap: 8px;
+}
+
+.storyDots button {
+  width: 8px;
+  height: 8px;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: rgba(230, 230, 227, 0.3);
+  cursor: pointer;
+  transition: width 0.2s ease, background 0.2s ease;
+}
+
+.storyDots button[aria-current='true'] {
+  width: 22px;
+  background: var(--amber-500);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -646,8 +686,14 @@
 
 .quickGrid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 14px;
+}
+
+@media (max-width: 760px) {
+  .quickGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .quickTile {
@@ -916,9 +962,9 @@
     margin-bottom: 4px;
   }
   .quickLabel {
-    font-size: 11.5px;
+    font-size: 13px;
   }
   .quickDesc {
-    display: none;
+    display: block;
   }
 }

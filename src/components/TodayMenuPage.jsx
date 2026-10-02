@@ -1061,7 +1061,15 @@ export default function TodayMenuPage() {
               <div className={styles.calGrid}>
                 {calWeeks.flatMap((week, wi) =>
                   week.map((cell, di) => {
-                    if (!cell) return <div key={`${wi}-${di}`} className={styles.calCellEmpty} />
+                    if (!cell) {
+                      return (
+                        <div
+                          key={`${wi}-${di}`}
+                          className={styles.calCellEmpty}
+                          data-weekend={di === 0 || di === 6 ? 'true' : 'false'}
+                        />
+                      )
+                    }
                     const cellYmd = toYmd(cell.date)
                     const cellMeal = calMealMap[cellYmd]
                     const isToday = calIsCurrentMonth && cell.day === today.getDate()
@@ -1071,6 +1079,7 @@ export default function TodayMenuPage() {
                         key={`${wi}-${di}`}
                         type="button"
                         className={styles.calCell}
+                        data-weekend={di === 0 || di === 6 ? 'true' : 'false'}
                         data-today={isToday ? 'true' : 'false'}
                         data-selected={isSelected ? 'true' : 'false'}
                         onClick={() => selectCalendarDate(cell.date)}

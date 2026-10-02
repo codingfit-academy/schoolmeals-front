@@ -179,6 +179,22 @@ const QUICK_ACTIONS = [
       </>
     ),
   },
+  {
+    key: 'ranking',
+    to: '/ranking',
+    label: '우리 학교가 더 맛있어요',
+    desc: '학교 급식 대결 순위',
+    artFrom: '#d59ad0',
+    artTo: '#8a4a86',
+    art: (
+      <>
+        <rect x="14" y="34" width="14" height="24" rx="3" fill="#fdf6e6" />
+        <rect x="29" y="20" width="14" height="38" rx="3" fill="#e8a33d" />
+        <rect x="44" y="40" width="14" height="18" rx="3" fill="#fdf6e6" />
+        <circle cx="36" cy="13" r="5" fill="#fdf6e6" />
+      </>
+    ),
+  },
 ]
 
 export default function LandingPage() {
@@ -200,6 +216,8 @@ export default function LandingPage() {
   const storyRef = useRef(null)
   const [storyProgress, setStoryProgress] = useState(0)
   const [storyHorizontal, setStoryHorizontal] = useState(false)
+  const storyTrackRef = useRef(null)
+  const [mobileIndex, setMobileIndex] = useState(0)
 
   const bestTrackRef = useRef(null)
   const bestPausedRef = useRef(false)
@@ -246,6 +264,38 @@ export default function LandingPage() {
     if (!el) return
 
     let frame = 0
+    let snapTimer = 0
+    let snapUntil = 0
+    let settledY = window.scrollY
+    const panelCount = STORY_PANELS.length + 1
+
+    // 자석: 스크롤을 멈추면 가장 가까운 패널로 끌어당깁니다.
+    // 진행 방향으로 패널의 25%만 넘어가도 다음 패널로 넘어가게(방향 편향) 해서 가볍게 넘길 수 있습니다.
+    function settle() {
+      if (Date.now() < snapUntil) {
+        snapTimer = setTimeout(settle, 120)
+        return
+      }
+      const total = el.offsetHeight - window.innerHeight
+      if (total <= 0) return
+      const start = el.getBoundingClientRect().top + window.scrollY
+      const p = (window.scrollY - start) / total
+      if (p <= 0 || p >= 1) {
+        settledY = window.scrollY
+        return
+      }
+      const pos = p * (panelCount - 1)
+      const forward = window.scrollY >= settledY
+      const raw = forward ? Math.floor(pos + 0.75) : Math.ceil(pos - 0.75)
+      const idx = Math.min(Math.max(raw, 0), panelCount - 1)
+      const target = start + (idx / (panelCount - 1)) * total
+      settledY = target
+      if (Math.abs(target - window.scrollY) > 2) {
+        snapUntil = Date.now() + 700
+        window.scrollTo({ top: target, behavior: 'smooth' })
+      }
+    }
+
     function update() {
       frame = 0
       const total = el.offsetHeight - window.innerHeight
@@ -258,6 +308,8 @@ export default function LandingPage() {
     }
     function onScroll() {
       if (!frame) frame = requestAnimationFrame(update)
+      clearTimeout(snapTimer)
+      snapTimer = setTimeout(settle, 140)
     }
 
     update()
@@ -265,6 +317,7 @@ export default function LandingPage() {
     window.addEventListener('resize', onScroll)
     return () => {
       if (frame) cancelAnimationFrame(frame)
+      clearTimeout(snapTimer)
       window.removeEventListener('scroll', onScroll)
       window.removeEventListener('resize', onScroll)
     }
@@ -519,6 +572,12 @@ export default function LandingPage() {
 
             <div
               className={styles.storyTrack}
+              ref={storyTrackRef}
+              onScroll={(e) => {
+                if (storyHorizontal) return
+                const t = e.currentTarget
+                setMobileIndex(Math.round(t.scrollLeft / Math.max(t.clientWidth, 1)))
+              }}
               style={
                 storyHorizontal
                   ? { transform: `translate3d(-${storyProgress * STORY_PANELS.length * 100}%, 0, 0)` }
@@ -608,9 +667,24 @@ export default function LandingPage() {
                   학교 검색하기
                 </button>
               )}
-              {storyHorizontal && (
+              {storyHorizontal ? (
                 <div className={styles.storyProgress}>
                   <span style={{ transform: `scaleX(${storyProgress})` }} />
+                </div>
+              ) : (
+                <div className={styles.storyDots}>
+                  {[...STORY_PANELS, null].map((panel, i) => (
+                    <button
+                      key={panel?.key ?? 'finale'}
+                      type="button"
+                      aria-label={`${i + 1}번째 화면으로`}
+                      aria-current={i === mobileIndex ? 'true' : 'false'}
+                      onClick={() => {
+                        const t = storyTrackRef.current
+                        t?.scrollTo({ left: t.clientWidth * i, behavior: 'smooth' })
+                      }}
+                    />
+                  ))}
                 </div>
               )}
             </div>
